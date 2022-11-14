@@ -1,0 +1,10 @@
+{
+    "NF":{
+        "passband2lam": "passband2lam",
+        "batch_size": 500,
+        "n_epochs": 1000,
+        "lr": 0.01,
+        "device": "cpu",
+        "weight_decay": 0.01
+    }
+}
