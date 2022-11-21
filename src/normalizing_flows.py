@@ -48,10 +48,9 @@ class RealNVPtransforms():
 
     def forward_transform(self, layer, x, y):
         """
-        x has dimension 2
-        y has dimension 2
+        Forward transform of flux data y = [flux,flux_err] to latent z conditioned on x = [time_stamp, passband]
         """
-        nn_input = torch.cat(x,y)
+        nn_input = torch.cat(y,x)
         nn_masked_input, x_masked, x_masked_prime = utils.mask_inputs(nn_input, x, layer)
         x_forward = x_masked_prime*(np.exp(self.s.forward(nn_masked_input))+self.t.forward(nn_masked_input))+x_masked
         """
@@ -61,8 +60,7 @@ class RealNVPtransforms():
 
     def inverse_transform(self, layer, z, x):
         """
-        x has dimension 2
-        y has dimension 2
+        Inverse transform of latent z to flux data y = [flux,flux_err] conditioned on x = [time_stamp, passband]
         """
         nn_input = torch.cat(z,x)
         nn_masked_input, z_masked, z_masked_prime = utils.mask_inputs(nn_input, x, layer)
