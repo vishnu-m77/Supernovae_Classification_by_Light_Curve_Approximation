@@ -2,6 +2,7 @@
 import torch
 import numpy as np
 from torch import nn
+import torch.functional as func
 
 class utils():
     def __init__(self) -> None:
@@ -22,13 +23,28 @@ class utils():
         return nn_masked_input, var_masked, var_masked_prime
 
 
+class Net(nn.Module):
+    def __init__(self, hidden_units=10):
+        super(Net, self).__init__()
+        self.input_units = 4
+        self.hidden_units = hidden_units # need to make it a hyper-parameter
+        self.output_units = 2
+
+        self.fc1 = nn.Linear(self.input_units, self.hidden_units)
+        self.fc2 = nn.Linear(self.hidden_units, self.output_units)
+
+    def forward(self):
+        h = torch.tanh(self.fc1)
+        y = nn.Linear(h)
+        return y
+
 
 class RealNVPtransforms():
 
     def __init__(self):
         super(RealNVPtransforms, self).__init__()
-        self.s = 3 # must change
-        self.t = 4 # must change
+        self.s = Net(hidden_units=10)
+        self.t = Net(hidden_units=10)
 
     def forward_transform(self, layer, x, y):
         """
@@ -37,7 +53,7 @@ class RealNVPtransforms():
         """
         nn_input = torch.cat(x,y)
         nn_masked_input, x_masked, x_masked_prime = utils.mask_inputs(nn_input, x, layer)
-        x_forward = x_masked_prime*(np.exp(self.s(nn_masked_input))+self.t(nn_masked_input))+x_masked
+        x_forward = x_masked_prime*(np.exp(self.s.forward(nn_masked_input))+self.t.forward(nn_masked_input))+x_masked
         """
         need to compute determinant
         """
@@ -50,7 +66,7 @@ class RealNVPtransforms():
         """
         nn_input = torch.cat(z,x)
         nn_masked_input, z_masked, z_masked_prime = utils.mask_inputs(nn_input, x, layer)
-        x_backward = (z_masked_prime-self.t(nn_masked_input))*np.exp(-self.s(nn_masked_input))+z_masked
+        x_backward = (z_masked_prime-self.t.forward(nn_masked_input))*np.exp(-self.s.forward(nn_masked_input))+z_masked
         return x_backward
 
 class NormalizingFlowsBase(RealNVPtransforms):
@@ -62,7 +78,7 @@ class NormalizingFlowsBase(RealNVPtransforms):
         for layer in range(self.num_layers):
             x = self.forward_transform(layer, x, y)
         z = x
-        return x
+        return z
 
     def full_backward_transform(self, z, x):
         for layer in range(self.num_layers):
