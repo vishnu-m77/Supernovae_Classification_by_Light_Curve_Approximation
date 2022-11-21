@@ -6,9 +6,6 @@ warnings.filterwarnings('ignore')
 # import utils
 import matplotlib
 import matplotlib.pyplot as plt
-from matplotlib import rc
-from tqdm.notebook import tqdm
-#from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -38,7 +35,7 @@ import os
 from joblib import Parallel, delayed
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
 from sklearn.utils import resample
-
+import json
 
 passband2lam  = {0: 1, 1: 2} # green, red 
 color = {1: 'red', 0: 'green'}
@@ -165,7 +162,7 @@ def bootstrap_estimate_mean_stddev(arr, n_samples=10000):
     sigma = np.sqrt(np.sum((bs_samples - bs_samples.mean())**2) / (n_samples - 1))
     return np.mean(bs_samples), sigma
 
-def get_images(outputs, silent=False):
+def get_images(outputs, directory, silent=False):
     images = []
     labels = []
     for img in outputs:
@@ -174,6 +171,13 @@ def get_images(outputs, silent=False):
             images.append(img[1]) # завернуть в лист если хочу другую размерность 4 dim
     images = np.array(images)
     labels = np.array(labels)
+    images = images.tolist()
+    labels = labels.tolist()
+    with open(directory + "/images.json", 'w') as f:
+        json.dump(images, f)
+    
+    with open(directory + "/labels.json", 'w') as f:
+        json.dump(labels, f)
     return images, labels
 
 def aug_one(model, name):
@@ -248,15 +252,30 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
                           index=['mean', 'std'])
     return report
 
-def classification(model_name = 'GP', n_obs = N_OBS, n_epoches = N_EPOCHES):
+def classification(model_name = 'NF', n_obs = N_OBS, n_epoches = N_EPOCHES):
     all_data = []
     all_target_classes = []
 
     model = models_dict[model_name]
     print(model_name)
 
-    outputs = Parallel(n_jobs=-1)(delayed(aug_one)(model, name) for name in df_all['object_id'].unique())
-    all_data, all_target_classes = get_images(outputs)
+    # outputs = Parallel(n_jobs=-1)(delayed(aug_one)(model, name) for name in df_all['object_id'].unique())
+    
+    # print(len(list(df_all['object_id'].unique())))
+    
+    # outputs = [aug_one(model, name) for name in df_all['object_id'].unique()]
+    
+    print("got outputs")
+    
+    directory = os.path.dirname(__file__)
+    
+    # all_data, all_target_classes = get_images(outputs, directory)
+    
+    with open(directory + "/images.json", 'r') as f:
+        all_data = json.load(f)
+    
+    with open(directory + "/labels.json", 'r') as f:
+        all_target_classes = json.load(f)
     
     all_data = np.array(all_data)
     all_target_classes = np.array(all_target_classes)
@@ -314,7 +333,7 @@ def classification(model_name = 'GP', n_obs = N_OBS, n_epoches = N_EPOCHES):
     best_loss_val = float('inf')
     best_state_on_val = None
 
-    for epoch in tqdm(epochs):  # loop over the dataset multiple times
+    for epoch in list(epochs):  # loop over the dataset multiple times
         epoch_loss = 0.0
         net.train()
         for info in trainloader:

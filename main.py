@@ -27,6 +27,6 @@ if __name__ == '__main__':
     # Input heat map into CNN for binary classification
     # Regression and Performance metrics
     # Visualization
-    
+    classification.classification(model_name = 'NF')
 
     print("Hello")
