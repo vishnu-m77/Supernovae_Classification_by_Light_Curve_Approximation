@@ -24,9 +24,11 @@ class utils():
 
 
 class RealNVPtransforms():
+
     def __init__(self):
-        self.s = 3
-        self.t = 4
+        super(RealNVPtransforms, self).__init__()
+        self.s = 3 # must change
+        self.t = 4 # must change
 
     def forward_transform(self, layer, x, y):
         """
@@ -41,7 +43,7 @@ class RealNVPtransforms():
         """
         return x_forward
 
-    def inverse_transforms(self, layer, z, x):
+    def inverse_transform(self, layer, z, x):
         """
         x has dimension 2
         y has dimension 2
@@ -51,6 +53,27 @@ class RealNVPtransforms():
         x_backward = (z_masked_prime-self.t(nn_masked_input))*np.exp(-self.s(nn_masked_input))+z_masked
         return x_backward
 
+class NormalizingFlowsBase(RealNVPtransforms):
+    def __init__(self, num_layers):
+        super(NormalizingFlowsBase, self).__init__()
+        self.num_layers = num_layers
+
+    def full_forward_transform(self, x, y):
+        for layer in range(self.num_layers):
+            x = self.forward_transform(layer, x, y)
+        z = x
+        return x
+
+    def full_backward_transform(self, z, x):
+        for layer in range(self.num_layers):
+            z = self.inverse_transform(layer, z, x)
+        y = z
+        return y
+    
+    def sample_data(self, x):
+        z = torch.distributions.MultivariateNormal(torch.zeros(2), torch.eye(2)).sample()
+        y = self.full_backward_transform(z,x)
+        print(y[0]) # flux
 
 
 
