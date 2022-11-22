@@ -52,11 +52,12 @@ class RealNVPtransforms():
         """
         nn_input = torch.cat(y,x)
         nn_masked_input, x_masked, x_masked_prime = utils.mask_inputs(nn_input, x, layer)
-        x_forward = x_masked_prime*(np.exp(self.s.forward(nn_masked_input))+self.t.forward(nn_masked_input))+x_masked
+        s_forward = self.s.forward(nn_masked_input)
+        x_forward = x_masked_prime*(np.exp(s_forward)+self.t.forward(nn_masked_input))+x_masked
         """
         need to compute determinant
         """
-        return x_forward
+        return x_forward, s_forward # use this s_forard to compute the determinant
 
     def inverse_transform(self, layer, z, x):
         """
