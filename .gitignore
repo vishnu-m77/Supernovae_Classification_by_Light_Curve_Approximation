@@ -131,3 +131,6 @@ dmypy.json
 bin/
 lib64
 pyvenv.cfg
+share/
+etc/
+*.1
