@@ -2,8 +2,6 @@ import numpy as np
 import pandas as pd
 import sklearn
 import warnings
-warnings.filterwarnings('ignore')
-# import utils
 import matplotlib
 import matplotlib.pyplot as plt
 import torch
@@ -36,40 +34,7 @@ from joblib import Parallel, delayed
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
 from sklearn.utils import resample
 import json
-
-path = os.getcwd()
-path_to = "{}/data/ZTF_BTS_23_29__22_09_2021.csv".format(os.getcwd())
-
-bts = pd.read_csv(path_to, sep =',')
-bts = bts.drop('Unnamed: 0', 1)
-
-df_all = pd.read_csv(path + '/data/ANTARES_NEW.csv')
-#df_all = pd.read_csv(path + 'ANTARES_10_in_g_r_bands.csv')
-df_all = df_all.drop('Unnamed: 0', 1)
-
-print("Названия колонок в таблице ANTARES_NEW.csv со всеми кривыми блеска: \n\n", df_all.columns, "\n\n")
-print("Number of objects: ", len(df_all['object_id'].unique()))
-
-obj_names = df_all['object_id'].unique()
-
-# df_all.loc[df_all.obj_type == 'SN Ia', 'obj_type'] = 1
-# df_all.loc[df_all.obj_type != 1, 'obj_type'] = 0
-
-df_all.loc[df_all.obj_type == 'SN Ia', 'obj_type'] = 1
-df_all.loc[df_all.obj_type == 'SN Ia-91T', 'obj_type'] = 1
-df_all.loc[df_all.obj_type == 'SN Ia-pec', 'obj_type'] = 1
-df_all.loc[df_all.obj_type == 'SN Iax', 'obj_type'] = 1
-df_all.loc[df_all.obj_type == 'SN Ia-91bg', 'obj_type'] = 1
-df_all.loc[df_all.obj_type == 'SN Ia-CSM', 'obj_type'] = 1
-df_all.loc[df_all.obj_type != 1, 'obj_type'] = 0 
-
-def bootstrap_estimate_mean_stddev(arr, n_samples=10000):
-    arr = np.array(arr)
-    np.random.seed(0)
-    bs_samples = np.random.randint(0, len(arr), size=(n_samples, len(arr)))
-    bs_samples = arr[bs_samples].mean(axis=1)
-    sigma = np.sqrt(np.sum((bs_samples - bs_samples.mean())**2) / (n_samples - 1))
-    return np.mean(bs_samples), sigma
+warnings.filterwarnings('ignore')
 
 class Net(nn.Module):
     def __init__(self):
@@ -96,26 +61,6 @@ class Net(nn.Module):
     def forward(self, x):
         x = self.cnn(x)
         return x
-
-def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
-    
-    metrics = []
-    inds = np.arange(len(y_test))
-    for i in range(n_iters):
-        inds_boot = resample(inds)
-        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
-        accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
-        pr_auc = auc(recall, precision)
-        recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
-    metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
-                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
-                          index=['mean', 'std'])
-    return report
 
 def classification(n_epoches = 10):
     all_data = []
@@ -235,78 +180,5 @@ def classification(n_epoches = 10):
     # plt.show()
 
     net.load_state_dict(best_state_on_val)
+    
     print('Finished Training')
-    
-    y_test_pred = net(X_test_tensor).detach().numpy()[:, 0]
-    
-    report = gen_report(y_test, y_test_pred)
-    print(report)
-    # y_test = []
-    # y_probs = []
-    # y_probs_0 = []
-    # y_probs_1 = []
-
-    # with torch.no_grad():
-    #     for test_info in testloader:
-    #         images, test_labels = test_info
-    #         test_outputs = net(images)
-
-    #         # get output value
-    #         prob = test_outputs.item()
-
-    #         # check true target valur    
-    #         true_class = int(test_labels.item())
-
-    #         # compare output to threshold
-    #         if true_class == 0:
-    #             y_probs_0.append(prob)
-    #         else:
-    #             y_probs_1.append(prob)
-
-    #         # get predicted target value
-    #         y_test.append(true_class)
-    #         y_probs.append(prob)
-
-    # y_test = np.array(y_test)
-    # y_probs = np.array(y_probs)
-
-    # assert np.array(y_probs).min() >= 0
-    # assert np.array(y_probs).max() <= 1
-
-    # N = len(y_probs)
-
-    # # sample predicted values
-    # sample_coeffs = np.random.randint(0, N, (10000, 1000))
-    # sample_prob = y_probs[sample_coeffs]
-    # sample_test = y_test[sample_coeffs]
-    # sample_pred = sample_prob > 0.5
-
-    # assert len(sample_test) == len(sample_prob)
-    # assert len(sample_prob) == len(sample_pred)
-    # T = len(sample_test)
-
-    # # calculated mean accuracy
-    # accuracy = [(sample_pred[i] == sample_test[i]).mean() for i in range(T)]
-    # y_pred = np.array(y_probs) > 0.5
-    # print("LogLoss = %.4f" % log_loss(y_test, y_pred))
-
-    # # calculate mean log loss
-    # logloss = [log_loss(sample_test[i], sample_pred[i]) for i in range(T)]
-    # # compare distibution of output values
-
-    # print("Test ROC-AUC: %.4f, test PR-AUC: %.4f" % (roc_auc_score(y_test, y_probs), 
-    #                                                      average_precision_score(y_test, y_probs)))
-
-    # # calculate mean AUC-ROC & AUC-PR
-    # auc_roc = [roc_auc_score(sample_test[i], sample_prob[i]) for i in range(T)]
-    # auc_pr = [average_precision_score(sample_test[i], sample_prob[i]) for i in range(T)]
-
-    # mean_logloss, std_logloss = bootstrap_estimate_mean_stddev(logloss)
-    # mean_accuracy, std_accuracy = bootstrap_estimate_mean_stddev(accuracy)
-    # mean_auc_roc, std_auc_roc = bootstrap_estimate_mean_stddev(auc_roc)
-    # mean_auc_pr, std_auc_pr = bootstrap_estimate_mean_stddev(auc_pr)
-    
-    # print("LogLoss:  mean = %.4f, std = %.4f" % (mean_logloss, std_logloss))
-    # print("Accuracy: mean = %.4f, std = %.4f" % (mean_accuracy, std_accuracy))
-    # print("AUC-ROC:  mean = %.4f, std = %.4f" % (mean_auc_roc, std_auc_roc))
-    # print("AUC-PR:   mean = %.4f, std = %.4f" % (mean_auc_pr, std_auc_pr))   

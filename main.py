@@ -3,7 +3,8 @@ import os
 import torch
 import json
 import matplotlib.pyplot as plt
-import classification
+# import classification
+import CNN
 
 
 if __name__ == '__main__':
@@ -23,10 +24,9 @@ if __name__ == '__main__':
     
     # Load data
     # Run Normalizing Flows to obtain the approximate light curve
-    # Transform light curve into heat map
     # Input heat map into CNN for binary classification
+    CNN.classification()
     # Regression and Performance metrics
-    # Visualization
-    classification.classification(model_name = 'NF')
-
+    # Visualization and Report
+    
     print("Hello")
