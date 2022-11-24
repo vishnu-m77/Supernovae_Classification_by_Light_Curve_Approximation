@@ -62,6 +62,26 @@ class Net(nn.Module):
         x = self.cnn(x)
         return x
 
+def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
+    
+    metrics = []
+    inds = np.arange(len(y_test))
+    for i in range(n_iters):
+        inds_boot = resample(inds)
+        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
+        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
+        accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
+        precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
+        pr_auc = auc(recall, precision)
+        recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
+        precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
+        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
+    metrics = np.array(metrics)
+    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
+                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
+                          index=['mean', 'std'])
+    return report
+
 def classification(n_epoches = 10):
     all_data = []
     all_target_classes = []
@@ -76,6 +96,14 @@ def classification(n_epoches = 10):
     all_target_classes = np.array(all_target_classes)
     print(all_data.shape, all_target_classes.shape)
 
+    # normalize input data
+    all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
+    print(all_data.size)
+
+    train_size = 0.6*len(all_data)
+    val_size = 0.2*len(all_data)
+    test_size = 0.2*len(all_data)
+    
     # train / test split data
     X_train, X_test_val, y_train, y_test_val = train_test_split(all_data, 
                                                             all_target_classes,
@@ -87,30 +115,36 @@ def classification(n_epoches = 10):
                                                             test_size=0.5,
                                                             random_state=11)
     # normalize input data
-    X_train_norm = np.array((X_train - X_train.mean()) / X_train.std(), dtype=np.float32)
-    X_test_norm = np.array((X_test - X_train.mean()) / X_train.std(), dtype=np.float32)
-    X_val_norm = np.array((X_val - X_train.mean()) / X_train.std(), dtype=np.float32)
+    # X_train_norm = np.array((X_train - X_train.mean()) / X_train.std(), dtype=np.float32)
+    # X_test_norm = np.array((X_test - X_train.mean()) / X_train.std(), dtype=np.float32)
+    # X_val_norm = np.array((X_val - X_train.mean()) / X_train.std(), dtype=np.float32)
 
     # convert train data to tensors
-    X_train_tensor = torch.from_numpy(X_train_norm)
+    X_train_tensor = torch.from_numpy(X_train)
+    print(X_train.shape)
     y_train_tensor = torch.from_numpy(np.array(y_train, dtype=np.float32))
 
     # create train data loader
     train_data = TensorDataset(X_train_tensor, y_train_tensor)
+
+
     trainloader = torch.utils.data.DataLoader(train_data, batch_size=1,
                                                   shuffle=True)#, num_workers=2)
 
     # convert test data to tensors
-    X_test_tensor = torch.from_numpy(X_test_norm)
+    X_test_tensor = torch.from_numpy(X_test)
+    print(X_test.shape)
     y_test_tensor = torch.from_numpy(np.array(y_test, dtype=np.float32))
 
     # create test data loader
     test_data = TensorDataset(X_test_tensor, y_test_tensor)
+    
     testloader = torch.utils.data.DataLoader(test_data, batch_size=1,
                                                  shuffle=False)#, num_workers=2)
 
     # convert val data to tensors
-    X_val_tensor = torch.from_numpy(X_val_norm)
+    X_val_tensor = torch.from_numpy(X_val)
+    print(X_val.shape)
     y_val_tensor = torch.from_numpy(np.array(y_val, dtype=np.float32))
 
     # create val data loader
@@ -152,7 +186,7 @@ def classification(n_epoches = 10):
             epoch_loss += loss.item()
 
         # print mean loss for the epoch
-        cur_loss = epoch_loss / X_train_norm.shape[0]
+        cur_loss = epoch_loss / X_train.shape[0]
         # plt.plot(epoch, cur_loss, '.', color='red')
         if (epoch + 1) % 10 == 0:
             print('[%5d] error: %.3f' % (epoch + 1, cur_loss))
@@ -169,7 +203,7 @@ def classification(n_epoches = 10):
 
             epoch_loss_val += loss.item()
 
-        cur_loss_val = epoch_loss_val / X_val_norm.shape[0]
+        cur_loss_val = epoch_loss_val / X_val.shape[0]
         # plt.plot(epoch, cur_loss_val, '.', color='blue')
 
         if epoch_loss_val <= best_loss_val:
@@ -182,3 +216,7 @@ def classification(n_epoches = 10):
     net.load_state_dict(best_state_on_val)
     
     print('Finished Training')
+    y_test_pred = net(X_test_tensor).detach().numpy()[:, 0]
+    
+    report = gen_report(y_test, y_test_pred)
+    print(report)
