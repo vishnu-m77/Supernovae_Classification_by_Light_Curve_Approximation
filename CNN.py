@@ -2,35 +2,12 @@ import numpy as np
 import pandas as pd
 import sklearn
 import warnings
-import matplotlib
 import matplotlib.pyplot as plt
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from torchvision import transforms
-from torch.utils.data import TensorDataset, DataLoader
 import torch.optim as optim
-from sklearn.metrics import log_loss
-from sklearn.metrics import roc_auc_score
-from sklearn.metrics import roc_curve
-from sklearn.metrics import precision_recall_curve
-from sklearn.metrics import average_precision_score
-from sklearn.gaussian_process.kernels import RBF, Matern, \
-RationalQuadratic, WhiteKernel, DotProduct, ConstantKernel as C
-from importlib import reload
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import confusion_matrix
-import fulu
-from fulu import single_layer_aug
-from fulu import bnn_aug
-from fulu import nf_aug
-from fulu import mlp_reg_aug
-from fulu import gp_aug
-#import gp_aug as gp_aug_old
-#from gp_aug import bootstrap_estimate_mean_stddev
 from copy import deepcopy
 import os
-from joblib import Parallel, delayed
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
 from sklearn.utils import resample
 import json
@@ -94,65 +71,44 @@ def classification(n_epoches = 10):
     
     all_data = np.array(all_data)
     all_target_classes = np.array(all_target_classes)
-    print(all_data.shape, all_target_classes.shape)
+    # print(all_data.shape, all_target_classes.shape)
 
     # normalize input data
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
-    print(all_data.size)
+    # print(all_data.size)
 
-    train_size = 0.6*len(all_data)
-    val_size = 0.2*len(all_data)
-    test_size = 0.2*len(all_data)
+    train_size = int(0.6*len(all_data))
+    val_size = int(0.2*len(all_data))
+    test_size = int(0.2*len(all_data))
     
+    X_train = []
+    y_train = []
     # train / test split data
-    X_train, X_test_val, y_train, y_test_val = train_test_split(all_data, 
-                                                            all_target_classes,
-                                                            test_size=0.4,
-                                                            random_state=11)
-
-    X_val, X_test, y_val, y_test = train_test_split(X_test_val, 
-                                                            y_test_val,
-                                                            test_size=0.5,
-                                                            random_state=11)
-    # normalize input data
-    # X_train_norm = np.array((X_train - X_train.mean()) / X_train.std(), dtype=np.float32)
-    # X_test_norm = np.array((X_test - X_train.mean()) / X_train.std(), dtype=np.float32)
-    # X_val_norm = np.array((X_val - X_train.mean()) / X_train.std(), dtype=np.float32)
-
-    # convert train data to tensors
-    X_train_tensor = torch.from_numpy(X_train)
-    print(X_train.shape)
-    y_train_tensor = torch.from_numpy(np.array(y_train, dtype=np.float32))
-
-    # create train data loader
-    train_data = TensorDataset(X_train_tensor, y_train_tensor)
-
-
-    trainloader = torch.utils.data.DataLoader(train_data, batch_size=1,
-                                                  shuffle=True)#, num_workers=2)
-
-    # convert test data to tensors
-    X_test_tensor = torch.from_numpy(X_test)
-    print(X_test.shape)
-    y_test_tensor = torch.from_numpy(np.array(y_test, dtype=np.float32))
-
-    # create test data loader
-    test_data = TensorDataset(X_test_tensor, y_test_tensor)
+    for i in range(train_size):
+        X_train.append(all_data[i])
+        y_train.append(all_target_classes[i])
     
-    testloader = torch.utils.data.DataLoader(test_data, batch_size=1,
-                                                 shuffle=False)#, num_workers=2)
-
-    # convert val data to tensors
-    X_val_tensor = torch.from_numpy(X_val)
-    print(X_val.shape)
-    y_val_tensor = torch.from_numpy(np.array(y_val, dtype=np.float32))
-
-    # create val data loader
-    val_data = TensorDataset(X_val_tensor, y_val_tensor)
-    valloader = torch.utils.data.DataLoader(val_data, batch_size=1,
-                                                 shuffle=False)#, num_workers=2)
+    X_train = torch.from_numpy(np.array(X_train))
+    y_train = torch.from_numpy(np.array(y_train))
     
-    #print(X_train_tensor.size())
+    X_val = []
+    y_val = []
+    for i in range(train_size, train_size + val_size):
+        X_val.append(all_data[i])
+        y_val.append(all_target_classes[i])
+    
+    X_val = torch.from_numpy(np.array(X_val))
+    y_val = torch.from_numpy(np.array(y_val))
+    
+    X_test = []
+    y_test = []
+    for i in range(train_size + val_size, train_size + val_size + test_size):
+        X_test.append(all_data[i])
+        y_test.append(all_target_classes[i])
+    
+    X_test = torch.from_numpy(np.array(X_test))
+    y_test = torch.from_numpy(np.array(y_test))
+    
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
     optimizer = optim.Adam(net.parameters(), lr=0.0002, weight_decay=0.001)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
@@ -164,9 +120,15 @@ def classification(n_epoches = 10):
     for epoch in list(epochs):  # loop over the dataset multiple times
         epoch_loss = 0.0
         net.train()
-        for info in trainloader:
+        for i in range(train_size):
             # get the inputs; info is a list of [inputs, labels]
-            inputs, labels = info
+            inputs = X_train[i]
+            inputs = inputs[None, :]
+            # print(inputs.shape)
+            labels = y_train[i]
+            # print(labels)
+            # print(labels.shape)
+            labels = labels[None]
 
             # zero the parameter gradients
             for param in net.parameters():
@@ -174,10 +136,12 @@ def classification(n_epoches = 10):
 
             # forward + backward + optimize
             #print(inputs.size())bootstrap_estimate_mean_stddev
-            #print(net(inputs).size())
+            # print(net(inputs).size())
             outputs = net(inputs).reshape(1)#(61)
-            #print(outputs.size())
-            #print(labels.size())
+            # print(outputs.size())
+            # print(labels.size())
+            outputs = outputs.type(torch.float32)
+            labels = labels.type(torch.float32)
             loss = criterion(outputs, labels)
             #optimizer.zero_grad()
             loss.backward()
@@ -193,12 +157,17 @@ def classification(n_epoches = 10):
 
         net.eval()
         epoch_loss_val = 0.0
-        for info in valloader:
+        for i in range(val_size):
             # get the inputs; info is a list of [inputs, labels]
-            inputs, labels = info
+            inputs = X_val[i]
+            labels = y_val[i]
+            inputs = inputs[None, :]
+            labels = labels[None]
 
             # forward
             outputs = net(inputs).reshape(1)
+            outputs = outputs.type(torch.float32)
+            labels = labels.type(torch.float32)
             loss = criterion(outputs, labels)
 
             epoch_loss_val += loss.item()
@@ -216,7 +185,7 @@ def classification(n_epoches = 10):
     net.load_state_dict(best_state_on_val)
     
     print('Finished Training')
-    y_test_pred = net(X_test_tensor).detach().numpy()[:, 0]
+    y_test_pred = net(X_test).detach().numpy()[:, 0]
     
     report = gen_report(y_test, y_test_pred)
     print(report)
