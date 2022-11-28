@@ -4,7 +4,8 @@ import torch
 import json
 import matplotlib.pyplot as plt
 # import classification
-import CNN
+from CNN import classification as CNN
+import normalizing_flows
 
 
 if __name__ == '__main__':
@@ -25,7 +26,7 @@ if __name__ == '__main__':
     # Load data
     # Run Normalizing Flows to obtain the approximate light curve
     # Input heat map into CNN for binary classification
-    CNN.classification()
+    CNN()
     # Regression and Performance metrics
     # Visualization and Report
     
