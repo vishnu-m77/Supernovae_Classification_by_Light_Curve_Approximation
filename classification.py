@@ -188,6 +188,8 @@ def classification(n_epoches = 10):
         for info in trainloader:
             # get the inputs; info is a list of [inputs, labels]
             inputs, labels = info
+            print(labels)
+            print(labels.shape)
 
             # zero the parameter gradients
             for param in net.parameters():
@@ -195,10 +197,10 @@ def classification(n_epoches = 10):
 
             # forward + backward + optimize
             #print(inputs.size())bootstrap_estimate_mean_stddev
-            #print(net(inputs).size())
+            print(net(inputs).shape)
             outputs = net(inputs).reshape(1)#(61)
-            #print(outputs.size())
-            #print(labels.size())
+            print(outputs.shape)
+            print(labels.shape)
             loss = criterion(outputs, labels)
             #optimizer.zero_grad()
             loss.backward()
