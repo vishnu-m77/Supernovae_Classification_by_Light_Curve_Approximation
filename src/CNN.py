@@ -64,9 +64,9 @@ def classification(n_epoches = 10):
     all_target_classes = []
 
     directory = os.path.dirname(__file__)
-    with open(directory + "/images.json", 'r') as f:
+    with open(directory + "/../data/images.json", 'r') as f:
         all_data = json.load(f)
-    with open(directory + "/labels.json", 'r') as f:
+    with open(directory + "/../data/labels.json", 'r') as f:
         all_target_classes = json.load(f)
     
     all_data = np.array(all_data)

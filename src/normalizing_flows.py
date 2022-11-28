@@ -154,7 +154,7 @@ class FitNF():
             optimizer.zero_grad()
             loss.backward()
             optimizer.step() 
-            if ((epoch+1) % 200 ==0): # make hyperparam
+            if ((epoch+1) % 200 == 0): # make hyperparam
                 print("Epoch: {0} and Loss: {1}".format(epoch+1, loss))
         # prediction
         """
@@ -185,69 +185,14 @@ class FitNF():
                 print("Original flux is {0} and predicted flux is {1} for flux {2}".format(self.flux[i],mean_flux,i+1))
         return pred_flux, orig_flux
 
+def main(object_name = 'ZTF20adaduxg'):
+    pred_flux, orig_flux = FitNF(object_name).predict_mean_flux()
+
 if __name__ == '__main__':
     """
     # run normalizing flow directly for testng
     """
-
     object_name =  'ZTF20adaduxg'
     pred_flux, orig_flux = FitNF(object_name).predict_mean_flux()
     # print("pred_flux is {0}".format(pred_flux))
     # print("orig_flux is {0}".format(orig_flux))
-    """
-    data_dir = 'data/ANTARES_NEW.csv'
-    df = pd.read_csv(data_dir)
-    #print(df['object_id']=='ZTF21abwxaht')
-    object_name =  'ZTF18accnmri'#'ZTF21abvicne'#'' #'ZTF20adadlqv' #'ZTF20adaduxg' #-> works VERY well #'ZTF20aahbamv'-> paper_object
-    df_obj = df.loc[df['object_id']==object_name]
-    timestamp = np.asarray(df_obj['mjd'])
-    passbands = np.asarray(df_obj['passband'])
-    wavelength_arr = []
-    for pb in passbands:
-        if pb==0:
-            wavelength_arr.append(np.log10(3751.36))
-        elif pb==1:
-            wavelength_arr.append(np.log10(4741.64))
-        else:
-            print("Passband invalid")
-    flux = np.asarray(df_obj['flux'])
-    flux_err = np.asarray(df_obj['flux_err'])
-
-    X = []
-    y = []
-    for i in range(len(passbands)):
-        X.append(np.array([timestamp[i], wavelength_arr[i]]))
-        y.append(np.array([flux[i], flux_err[i]]))
-    X = torch.from_numpy(np.array(X)).to(torch.float32)
-    y = torch.from_numpy(np.array(y)).to(torch.float32)
-
-# rewrite training loop
-    NF = NormalizingFlowsBase(num_layers=8)
-    optimizer = torch.optim.Adam(NF.parameters(), lr=0.0001)
-    num_epochs = 8000
-    X = StandardScaler().fit_transform(X)
-    X = torch.from_numpy(X).to(torch.float32)
-    for epoch in range(num_epochs):
-        _ , loss = NF.full_forward_transform(X,y)
-        loss = -loss
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step() 
-        if ((epoch+1) % 200 ==0):
-            print("Epoch: {0} and Loss: {1}".format(epoch+1, loss))
-    
-    pred_flux = []
-    orig_flux = []
-    for i in range(len(flux)):
-        if (i+1)%5==0:
-            inp = X[i] # 119, 160 works
-            num_samples = 1500
-            flux_approx = []
-            for j in range(num_samples):
-                flux_approx.append(NF.sample_data(inp)[0])
-            mean_flux = sum(flux_approx)/len(flux_approx)
-            pred_flux.append(mean_flux)
-            orig_flux.append(flux[i])
-            print("Original flux is {0} and predicted flux is {1} for flux {2}".format(flux[i],mean_flux,i+1))
-    original_flux = orig_flux
-    """
