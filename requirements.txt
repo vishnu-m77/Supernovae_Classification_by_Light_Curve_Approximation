@@ -4,6 +4,5 @@ torch
 fulu
 pandas
 sklearn
-tqdm
 joblib
 torchvision
