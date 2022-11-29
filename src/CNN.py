@@ -8,9 +8,10 @@ import torch.nn as nn
 import torch.optim as optim
 from copy import deepcopy
 import os
-from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
+from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score,  mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.utils import resample
 import json
+from scipy.stats import sem
 warnings.filterwarnings('ignore')
 
 class Net(nn.Module):
@@ -52,11 +53,15 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
         pr_auc = auc(recall, precision)
         recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
         precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
+        RMSE = mean_squared_error(y_test[inds_boot], y_test_pred[inds_boot], squared=False)             # Mean Sqaure Error
+        MAE = mean_absolute_error(y_test[inds_boot], y_test_pred[inds_boot]) 
+        MAPE = mean_absolute_percentage_error(y_test[inds_boot], y_test_pred[inds_boot])
+        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision, RMSE, MAE, MAPE])
     metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
+    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision', 'RMSE', 'MAE', 'MAPE'], 
                           data=[metrics.mean(axis=0), metrics.std(axis=0)], 
                           index=['mean', 'std'])
+    
     return report
 
 def classification(n_epoches = 10):
