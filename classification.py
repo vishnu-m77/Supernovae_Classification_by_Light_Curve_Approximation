@@ -110,11 +110,15 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
         pr_auc = auc(recall, precision)
         recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
         precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
+        RMSE = mean_squared_error(y_test[inds_boot], y_test_pred[inds_boot], squared=False)             # Mean Sqaure Error
+        MAE = mean_absolute_error(y_test[inds_boot], y_test_pred[inds_boot]) 
+        MAPE = mean_absolute_percentage_error(y_test[inds_boot], y_test_pred[inds_boot])
+        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision, RMSE, MAE, MAPE])
     metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
+    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision', 'RMSE', 'MAE', 'MAPE'],
                           data=[metrics.mean(axis=0), metrics.std(axis=0)], 
                           index=['mean', 'std'])
+    
     return report
 
 def classification(n_epoches = 10):
