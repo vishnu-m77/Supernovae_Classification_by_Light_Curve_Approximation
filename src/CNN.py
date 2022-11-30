@@ -194,6 +194,9 @@ def classification(directory, img_file, lbl_file, param, nf):
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     print(y_test_pred)
+    with open(directory + "/y_test_pred.json", 'w') as f:
+            json.dump(y_test_pred, f)
+    
     
     # report = gen_report(y_test, y_test_pred)
     # print(report)

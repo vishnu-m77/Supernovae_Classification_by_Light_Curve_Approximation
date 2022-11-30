@@ -5,7 +5,8 @@ from torch import nn
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
-import random
+import json
+import os
 
 """
 utility functions
@@ -139,6 +140,12 @@ class FitNF():
 
         if num_objects < len(objects):
             objects = objects[:num_objects]
+            
+        directory = os.path.dirname(__file__)
+            
+        with open(directory + "/objects.json", 'w') as f:
+            for object in objects:
+                json.dump(object, f)
 
         pred_fluxes = []
         aug_timestamps = []
@@ -176,10 +183,20 @@ class FitNF():
             aug_timestamps.append(aug_timestamp)
         
         X_test = np.array(X_test)
-        X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
         y_test = np.array(y_test)
+        
+        X_test_list = X_test.tolist()
+        y_test_list = y_test.tolist()
+        
+        with open(directory + "/X_test.json", 'w') as f:
+            json.dump(X_test_list, f)
+        
+        with open(directory + "/y_test.json", 'w') as f:
+            json.dump(y_test_list, f)
+        
+        X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
         y_test = torch.from_numpy(np.array(y_test)).to(torch.float32)
-
+        
         self.X_test = X_test
         self.y_test = y_test
         self.pred_fluxes = pred_fluxes
