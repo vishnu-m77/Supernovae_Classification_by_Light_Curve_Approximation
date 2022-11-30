@@ -47,8 +47,8 @@ if __name__ == '__main__':
     # print("augmented timestamp is {0}".format(aug_timestamp))
     # Input heat map into CNN for binary classification
     directory = os.path.dirname(__file__)
-    img_file = "/data/images.json"
-    lbl_file = "/data/labels.json"
+    img_file = "data\images.json"
+    lbl_file = "data\labels.json"
 
     cnn_params = param["CNN"]
     # nf = 1
