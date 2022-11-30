@@ -11,6 +11,7 @@ import os
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
 from sklearn.utils import resample
 import json
+
 warnings.filterwarnings('ignore')
 
 class Net(nn.Module):
@@ -59,14 +60,15 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
                           index=['mean', 'std'])
     return report
 
-def classification(n_epoches = 10):
+def classification(directory, img_file, lbl_file, param, nf):
     all_data = []
     all_target_classes = []
+    n_epochs = param["n_epochs"]
+    display_epochs = param["display_epochs"]
 
-    directory = os.path.dirname(__file__)
-    with open(directory + "/../data/images.json", 'r') as f:
+    with open(directory + img_file, 'r') as f:
         all_data = json.load(f)
-    with open(directory + "/../data/labels.json", 'r') as f:
+    with open(directory + lbl_file, 'r') as f:
         all_target_classes = json.load(f)
     
     all_data = np.array(all_data)
@@ -77,9 +79,9 @@ def classification(n_epoches = 10):
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
     # print(all_data.size)
 
-    train_size = int(0.6*len(all_data))
-    val_size = int(0.2*len(all_data))
-    test_size = int(0.2*len(all_data))
+    train_size = int(0.7*len(all_data))
+    val_size = int(0.3*len(all_data))
+    # test_size = int(0.2*len(all_data))
     
     X_train = []
     y_train = []
@@ -100,19 +102,19 @@ def classification(n_epoches = 10):
     X_val = torch.from_numpy(np.array(X_val))
     y_val = torch.from_numpy(np.array(y_val))
     
-    X_test = []
-    y_test = []
-    for i in range(train_size + val_size, train_size + val_size + test_size):
-        X_test.append(all_data[i])
-        y_test.append(all_target_classes[i])
+    # X_test = []
+    # y_test = []
+    # for i in range(train_size + val_size, train_size + val_size + test_size):
+    #     X_test.append(all_data[i])
+    #     y_test.append(all_target_classes[i])
     
-    X_test = torch.from_numpy(np.array(X_test))
-    y_test = torch.from_numpy(np.array(y_test))
+    # X_test = torch.from_numpy(np.array(X_test))
+    # y_test = torch.from_numpy(np.array(y_test))
     
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
     optimizer = optim.Adam(net.parameters(), lr=0.0002, weight_decay=0.001)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
-    epochs = np.arange(n_epoches)
+    epochs = np.arange(n_epochs)
 
     best_loss_val = float('inf')
     best_state_on_val = None
@@ -152,8 +154,8 @@ def classification(n_epoches = 10):
         # print mean loss for the epoch
         cur_loss = epoch_loss / X_train.shape[0]
         # plt.plot(epoch, cur_loss, '.', color='red')
-        if (epoch + 1) % 10 == 0:
-            print('[%5d] error: %.3f' % (epoch + 1, cur_loss))
+        if (epoch + 1) % display_epochs == 0:
+            print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
 
         net.eval()
         epoch_loss_val = 0.0
@@ -185,7 +187,13 @@ def classification(n_epoches = 10):
     net.load_state_dict(best_state_on_val)
     
     print('Finished Training')
+    X_test = nf.X_test
+    y_test = nf.y_test
+    print(X_test)
+    print(y_test)
+
     y_test_pred = net(X_test).detach().numpy()[:, 0]
+    print(y_test_pred)
     
-    report = gen_report(y_test, y_test_pred)
-    print(report)
+    # report = gen_report(y_test, y_test_pred)
+    # print(report)

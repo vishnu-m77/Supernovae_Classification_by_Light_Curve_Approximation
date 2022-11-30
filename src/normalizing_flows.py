@@ -122,14 +122,15 @@ class NormalizingFlowsBase(RealNVPtransforms):
         return y
 
 class FitNF():
-    def __init__(self, data_dir, num_objects, lr, num_epochs, display_epochs, num_samples, num_ts):
+    def __init__(self, data_dir, param):
         super(FitNF, self).__init__()
+        num_objects = param["num_objects"]
 
-        self.lr = lr
-        self.num_epochs = num_epochs
-        self.display_epochs = display_epochs
-        self.num_samples = num_samples
-        self.num_ts = num_ts
+        self.lr = param["lr"]
+        self.num_epochs = param["num_epochs"]
+        self.display_epochs = param["display_epochs"]
+        self.num_samples = param["num_samples"]
+        self.num_ts = param["num_ts"]
 
         df = pd.read_csv(data_dir) # define pandas datadrame for while data
 
@@ -146,14 +147,41 @@ class FitNF():
         # pred_flux, aug_timestamp = self.one_object_pred(df_obj)
         # pred_fluxes.append(pred_flux)
         # aug_timestamps.append(aug_timestamp)
+        X_test = []
+        y_test = []
+
+        # df.loc[df['obj_type'] == 'SN Ia', 'obj_type'] = 1
+        # df.loc[df['obj_type'] != 1, 'obj_type'] = 0
+        df.loc[df['obj_type'] == 'SN Ia', 'obj_type'] = 1
+        df.loc[df['obj_type'] == 'SN Ia-91T', 'obj_type'] = 1
+        df.loc[df['obj_type'] == 'SN Ia-pec', 'obj_type'] = 1
+        df.loc[df['obj_type'] == 'SN Iax', 'obj_type'] = 1
+        df.loc[df['obj_type'] == 'SN Ia-91bg', 'obj_type'] = 1
+        df.loc[df['obj_type'] == 'SN Ia-CSM', 'obj_type'] = 1
+        df.loc[df['obj_type'] != 1, 'obj_type'] = 0
 
         for object in objects:
             print(object)
             df_obj = df.loc[df['object_id'] == object] # select data for object=object_name
+            true_value = int(df_obj['obj_type'].to_numpy()[0])
+            y_test.append(true_value)
             pred_flux, aug_timestamp = self.one_object_pred(df_obj)
             pred_fluxes.append(pred_flux)
+            # pred_flux.reshape((2, self.num_ts))
+            mid = int(len(pred_flux)/2)
+            temp = []
+            temp.append(pred_flux[:mid])
+            temp.append(pred_flux[mid: ])
+            X_test.append(temp)
             aug_timestamps.append(aug_timestamp)
+        
+        X_test = np.array(X_test)
+        X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
+        y_test = np.array(y_test)
+        y_test = torch.from_numpy(np.array(y_test)).to(torch.float32)
 
+        self.X_test = X_test
+        self.y_test = y_test
         self.pred_fluxes = pred_fluxes
         self.aug_timestamps = aug_timestamps
     
@@ -224,6 +252,7 @@ class FitNF():
                 flux_approx.append(y_transform.inverse_transform(np.expand_dims(self.NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
             mean_flux = sum(flux_approx)/len(flux_approx)
             pred_flux.append(mean_flux)
-            print("For observation {0}, predicted flux is : {1}".format(X_pred[i], pred_flux[i]))
+            if (i+1)%32 == 0:
+                print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], pred_flux[i], i+1))
         return pred_flux, list(aug_timestamps)
 
