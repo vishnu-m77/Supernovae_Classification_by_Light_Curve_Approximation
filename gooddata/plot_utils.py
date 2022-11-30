@@ -1,5 +1,12 @@
-import matplotlib.pyplot as 
+import matplotlib.pyplot as plt
 
+def get_object(data, object_id):
+    anobject = data[data.object_id == object_id]
+    return anobject
+
+def get_passband(anobject, passband):
+    light_curve = anobject[anobject.passband == passband]
+    return light_curve
 
 def plot_light_curves(anobject, passband2name, title=''):
     anobject = anobject.sort_values('mjd')
