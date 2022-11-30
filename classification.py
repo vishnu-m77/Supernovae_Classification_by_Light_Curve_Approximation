@@ -33,7 +33,7 @@ from fulu import gp_aug
 from copy import deepcopy
 import os
 from joblib import Parallel, delayed
-from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
+from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.utils import resample
 import json
 
