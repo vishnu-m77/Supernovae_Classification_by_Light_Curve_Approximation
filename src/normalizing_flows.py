@@ -30,6 +30,17 @@ class utils():
             mask_prime = torch.tensor([1.,0.]).to(torch.float32)
         return nn_masked_mat, var_mask,mask_prime
 
+    def augmentation(timestamps, wavelengths=np.array([np.log10(3751.36), np.log10(4741.64)]), num_timestamps=128):
+        """
+        augments the data for flux interpolation
+        """
+        augmented_timestamps = np.linspace(min(timestamps), max(timestamps), num=num_timestamps)
+        X_pred = []
+        for wavelength in wavelengths:
+            for timestamp in augmented_timestamps:
+                X_pred.append([timestamp, wavelength])
+        return X_pred, augmented_timestamps
+
 class Net(nn.Module):
     """
     Contains neural network architecture for 
@@ -144,18 +155,23 @@ class FitNF():
         self.NF = NormalizingFlowsBase(num_layers=8) # make hyperparam
 
     def predict_mean_flux(self, X_pred = None):
-        optimizer = torch.optim.Adam(self.NF.parameters(), lr=0.0001) # make hyper param
+        optimizer = torch.optim.Adam(self.NF.parameters(), lr=0.00075) # make hyper param
         num_epochs = 8000 # make hyperparam
         X = StandardScaler().fit_transform(self.X)
         X = torch.from_numpy(X).to(torch.float32)
+        y_transform = StandardScaler()
+        processed_flux = y_transform.fit_transform(self.y)
+        self.y = torch.from_numpy(processed_flux).to(torch.float32)
+        loss_vals = []
         for epoch in range(num_epochs):
             _ , log_likelihood = self.NF.full_forward_transform(X,self.y)
             loss = -log_likelihood
             optimizer.zero_grad()
             loss.backward()
             optimizer.step() 
+            loss_vals.append(float(loss))
             if ((epoch+1) % 200 == 0): # make hyperparam
-                print("Epoch: {0} and Loss: {1}".format(epoch+1, loss))
+                print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, num_epochs, loss))
         # prediction
         """
         format of X_pred = {
@@ -168,31 +184,32 @@ class FitNF():
             [timestamp_256, pb_2]]
         }
         """
+        print("\nSampling...\n")
+        X_pred, aug_timestamps = utils.augmentation(timestamps=self.timestamp, num_timestamps=35)
         if (X_pred!=None):
             X = StandardScaler().fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
         pred_flux = []
-        orig_flux = []
-        for i in range(len(self.flux)): # length of x_pred (256*2)
-            if (i+1)%5==0: # remove this 
-                num_samples = 1500 # hyperparam
-                flux_approx = []
-                for j in range(num_samples):
-                    flux_approx.append(self.NF.sample_data(X[i])[0])
-                mean_flux = sum(flux_approx)/len(flux_approx)
-                pred_flux.append(mean_flux)
-                orig_flux.append(self.flux[i])
-                print("Original flux is {0} and predicted flux is {1} for flux {2}".format(self.flux[i],mean_flux,i+1))
-        return pred_flux, orig_flux
+        for i in range(len(X_pred)): # length of x_pred (256*2)
+            num_samples = 500 # hyperparam
+            flux_approx = []
+            for j in range(num_samples):
+                flux_approx.append(y_transform.inverse_transform(np.expand_dims(self.NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
+            mean_flux = sum(flux_approx)/len(flux_approx)
+            pred_flux.append(mean_flux)
+            print("For observation {0}, predicted flux is : {1}".format(X_pred[i], pred_flux[i]))
+        return pred_flux, list(aug_timestamps)
 
 def main(object_name = 'ZTF20adaduxg'):
-    pred_flux, orig_flux = FitNF(object_name).predict_mean_flux()
+    pred_flux, aug_timestamp = FitNF(object_name).predict_mean_flux()
+    return pred_flux, aug_timestamp
 
 if __name__ == '__main__':
     """
     # run normalizing flow directly for testng
     """
     object_name =  'ZTF20adaduxg'
-    pred_flux, orig_flux = FitNF(object_name).predict_mean_flux()
-    # print("pred_flux is {0}".format(pred_flux))
-    # print("orig_flux is {0}".format(orig_flux))
+    pred_flux, aug_timestamp = FitNF(object_name).predict_mean_flux()
+    print("for passband 0 flux is {0}\n".format(pred_flux[:35]))
+    print("for passband 1 flux is {0}\n".format(pred_flux[-35:]))
+    print("augmented timestamp is {0}".format(aug_timestamp))
