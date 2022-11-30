@@ -233,7 +233,7 @@ class FitNF():
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend(loc="upper right")
-        plt.savefig('plots/NF_Loss_Graph_'+object_name+'.png')
+        plt.savefig('plots2/NF_Loss_Graph_'+object_name+'.png')
         plt.clf()
         # prediction
         """
@@ -272,7 +272,7 @@ class FitNF():
         pb1_t = df_obj_pb_1['mjd']
         pb1_flux = df_obj_pb_1['flux']
         plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=0', color='b')
-        plt.plot(pb1_t, pb1_flux, 'o', label='NF: PB=1', color='g')
+        plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=1', color='g')
 
         plt.plot(aug_timestamps, pred_flux[:self.num_ts], label='NF: PB=0', color='b')
         plt.plot(aug_timestamps, pred_flux[-self.num_ts:], label='NF: PB=1', color='g')
@@ -282,7 +282,7 @@ class FitNF():
         plt.xlabel("timestamp")
         plt.ylabel("flux")
         plt.legend(loc="upper right")
-        plt.savefig('plots/Light_Flux_NF_'+object_name+'.png')
+        plt.savefig('plots2/Light_Flux_NF_'+object_name+'.png')
         plt.clf()
         return pred_flux, list(aug_timestamps)
 
