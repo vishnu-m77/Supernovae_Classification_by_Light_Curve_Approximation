@@ -135,3 +135,5 @@ share/
 etc/
 *.1
 
+# Unnecessary Plots
+prev_plots/
