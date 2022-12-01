@@ -168,6 +168,11 @@ def classification(directory, img_file, lbl_file, param, nf):
         # plt.plot(epoch, cur_loss, '.', color='red')
         if (epoch + 1) % display_epochs == 0:
             print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
+            original_stdout = sys.stdout
+            with open('out.txt', 'a') as f:
+                sys.stdout = f
+                print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
+                sys.stdout = original_stdout
 
         net.eval()
         epoch_loss_val = 0.0
@@ -202,6 +207,7 @@ def classification(directory, img_file, lbl_file, param, nf):
     # X_test = nf.X_test
     # y_test = nf.y_test
     # print(X_test)
+    
     print(y_test)
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
@@ -209,7 +215,14 @@ def classification(directory, img_file, lbl_file, param, nf):
     
     report = gen_report(y_test, y_test_pred, len(y_test))
     print(report)
-    
+    original_stdout = sys.stdout
+        
+    with open('out.txt', 'a') as f:
+        sys.stdout = f
+        print(y_test)
+        print(y_test_pred)
+        print(report)
+        sys.stdout = original_stdout
     y_test_pred = np.array(y_test_pred)
     y_test_pred_list = y_test_pred.tolist()
     with open(directory + "/y_test_pred.json", 'w') as f:

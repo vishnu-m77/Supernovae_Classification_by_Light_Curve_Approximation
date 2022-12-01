@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import json
 import os
 from joblib import Parallel, delayed
+import sys
 
 """
 utility functions
@@ -139,8 +140,8 @@ class FitNF():
         objects = df['object_id'].unique()
         np.random.shuffle(objects)
 
-        # if num_objects < len(objects):
-        #     objects = objects[:num_objects]
+        if num_objects < len(objects):
+            objects = objects[:num_objects]
             
         directory = os.path.dirname(__file__)
             
@@ -282,6 +283,7 @@ class FitNF():
             loss_vals.append(float(loss))
             # if ((epoch+1) % self.display_epochs == 0): 
         print ('Train Loss : {:.4f}'.format(loss))
+        
         # prediction
         """
         format of X_pred = {
@@ -344,7 +346,13 @@ class FitNF():
         output.append(flux_err)
         output.append(flux_err_pred)
         
-        print("Predicted object " + obj_name)
+        # print("Predicted object " + obj_name)
+        original_stdout = sys.stdout
+        
+        with open('out.txt', 'a') as f:
+            sys.stdout = f
+            print("Predicted object " + obj_name)
+            sys.stdout = original_stdout
 
         return output
 
