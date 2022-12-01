@@ -73,8 +73,11 @@ def classification(directory, img_file, lbl_file, param, nf):
     lr = param["lr"]
     weight_decay = param["weight_decay"]
     
-    img_file = os.path.join(directory, "X_test.json")
-    lbl_file = os.path.join(directory, "y_test.json")
+    # img_file = os.path.join(directory, "X_test.json")
+    # lbl_file = os.path.join(directory, "y_test.json")
+    
+    img_file = os.path.join(directory, "data/images.json")
+    lbl_file = os.path.join(directory, "data/labels.json")
     
     with open(img_file, 'r') as f:
         all_data = json.load(f)
@@ -91,9 +94,9 @@ def classification(directory, img_file, lbl_file, param, nf):
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
     # print(all_data.size)
 
-    train_size = int(0.6*len(all_data))
-    val_size = int(0.2*len(all_data))
-    test_size = int(0.2*len(all_data))
+    train_size = int(0.7*len(all_data))
+    val_size = int(0.3*len(all_data))
+    # test_size = int(0.2*len(all_data))
     
     X_train = []
     y_train = []
@@ -114,14 +117,14 @@ def classification(directory, img_file, lbl_file, param, nf):
     X_val = torch.from_numpy(np.array(X_val))
     y_val = torch.from_numpy(np.array(y_val))
     
-    X_test = []
-    y_test = []
-    for i in range(train_size + val_size, train_size + val_size + test_size):
-        X_test.append(all_data[i])
-        y_test.append(all_target_classes[i])
+    # X_test = []
+    # y_test = []
+    # for i in range(train_size + val_size, train_size + val_size + test_size):
+    #     X_test.append(all_data[i])
+    #     y_test.append(all_target_classes[i])
     
-    X_test = torch.from_numpy(np.array(X_test))
-    y_test = torch.from_numpy(np.array(y_test))
+    # X_test = torch.from_numpy(np.array(X_test))
+    # y_test = torch.from_numpy(np.array(y_test))
     
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
@@ -206,7 +209,23 @@ def classification(directory, img_file, lbl_file, param, nf):
     print('Finished Training')
     # X_test = nf.X_test
     # y_test = nf.y_test
-    # print(X_test)
+    img_file = os.path.join(directory, "X_test.json")
+    lbl_file = os.path.join(directory, "y_test.json")
+    
+    with open(img_file, 'r') as f:
+        X_test = json.load(f)
+    with open(lbl_file, 'r') as f:
+        y_test = json.load(f)
+        
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
+        
+    X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
+    
+    X_test = torch.from_numpy(np.array(X_test))
+    
+    y_test = torch.from_numpy(np.array(y_test))
+    print(X_test)
     
     print(y_test)
 
@@ -215,15 +234,15 @@ def classification(directory, img_file, lbl_file, param, nf):
     
     report = gen_report(y_test, y_test_pred, len(y_test))
     print(report)
-    original_stdout = sys.stdout
+    # original_stdout = sys.stdout
         
-    with open('out.txt', 'a') as f:
-        sys.stdout = f
-        print(y_test)
-        print(y_test_pred)
-        print(report)
-        sys.stdout = original_stdout
+    # with open('out.txt', 'a') as f:
+    #     sys.stdout = f
+    #     print(y_test)
+    #     print(y_test_pred)
+    #     print(report)
+    #     sys.stdout = original_stdout
     y_test_pred = np.array(y_test_pred)
     y_test_pred_list = y_test_pred.tolist()
-    with open(directory + "/y_test_pred.json", 'w') as f:
-        json.dump(y_test_pred_list, f)
+    # with open(directory + "/y_test_pred.json", 'w') as f:
+    #     json.dump(y_test_pred_list, f)

@@ -31,7 +31,8 @@ if __name__ == '__main__':
 
     nf_params = param["NF"]
     data_dir = 'data/ANTARES_NEW.csv'
-    nf = NF.FitNF(data_dir, nf_params)
+    # nf = NF.FitNF(data_dir, nf_params)
+    
     # flux_pred = nf.flux_pred
     # flux_err = nf.flux_err
     # flux = nf.flux
@@ -59,7 +60,7 @@ if __name__ == '__main__':
     lbl_file = "data\y_test.json"
 
     cnn_params = param["CNN"]
-    # nf = 1
+    nf = 1
     CNN(directory, img_file, lbl_file, cnn_params, nf)
     # Regression and Performance metrics
     # Visualization and Report
