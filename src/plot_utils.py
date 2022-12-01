@@ -10,16 +10,11 @@ def get_passband(anobject, passband):
     light_curve = anobject[anobject.passband == passband]
     return light_curve
 
-<<<<<<< Updated upstream
 def plot_light_curves(anobject, predDf, passband2name, filesavepath, title=''):
-=======
-def plot_light_curves(anobject, predDf, passband2name, title=''):
->>>>>>> Stashed changes
     anobject = anobject.sort_values('mjd')
     plt.figure(figsize=(9, 5.5))
     for passband in range(len(passband2name)):
         light_curve = get_passband(anobject, passband)
-<<<<<<< Updated upstream
         if passband == 0:
           color = 'b'
           label= 'DATA: PB=g' 
@@ -30,42 +25,23 @@ def plot_light_curves(anobject, predDf, passband2name, title=''):
     
     plt.plot(predDf['augTimestamps'].values, predDf['predFluxPass1'].values, label='NF: PB=g', color='b')
     plt.plot(predDf['augTimestamps'].values, predDf['predFluxPass2'].values, label='NF: PB=r', color='g')    
-=======
-        plt.scatter(light_curve['mjd'].values, light_curve['flux'].values)
-    
-    plt.plot(predDf['augTimestamps'].values, predDf['predFluxPass1'].values, label=passband2name[0])
-    plt.plot(predDf['augTimestamps'].values, predDf['predFluxPass2'].values, label=passband2name[1])
-
->>>>>>> Stashed changes
     plt.xlabel('Modified Julian Date')
     plt.xticks()
     plt.ylabel('Flux')
     plt.yticks()
-<<<<<<< Updated upstream
     plt.legend()
     plt.title(title)
     plt.savefig(filesavepath)
-=======
-    plt.legend(loc="upper right")
-    plt.title(title)
-    plt.savefig('/plots/Light_Curve_Flux_NF_'+anobject+'.png') 
->>>>>>> Stashed changes
 
 def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title):
     '''
     Parameters:
     object_: Name of the object for which plot is to be made
-<<<<<<< Updated upstream
     data: Original DataFrame (Antares_new.csv) containing mjd, Actual Flux, processed passband
     predFlux: Predicted flux array
     aug_timestamp : timestamp corresponding to predicted flux
     passband2name: Similar to {0: 'g', 1: 'r'}
     title: title of the plot
-=======
-    data: DataFrame containing mjd, Actual Flux, processed passband
-    predFlux: Predicted flux array
-    passband2name: Similar to {0: 'g', 1: 'r'}
->>>>>>> Stashed changes
     '''
     anobject = get_object(data, object_)
 
@@ -75,17 +51,11 @@ def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title)
          "predFluxPass2": predFlux[-nAugTimeStamps:],
          "augTimestamps": aug_timestamp
          })
-<<<<<<< Updated upstream
     title = 'flux vs timestamp '+ object_ 
     filesavepath = 'plots/Light_Curve_Flux_NF_'+object_+'.png'
     plot_light_curves(anobject, predDf, passband2name, filesavepath, title)
     plt.show()
     plt.clf()
-=======
-    
-    plot_light_curves(anobject, predDf, passband2name, title)
-    plt.show()
->>>>>>> Stashed changes
 
 '''calling code'''
 
@@ -94,7 +64,3 @@ def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title)
 #     # the length of predicted flux should twice that of aug timestamp, because we do it for two passbands
 #     df is the filtered data frame containing only rows corresponding to object_ from ANTARES_NEW.CSV
 #     plotLightCurve(object_, df, pred_flux, aug_timestamp, passband2name, title) 
-<<<<<<< Updated upstream
-
-=======
->>>>>>> Stashed changes
