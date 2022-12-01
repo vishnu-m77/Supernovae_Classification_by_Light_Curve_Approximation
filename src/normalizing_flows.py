@@ -153,7 +153,7 @@ class FitNF():
         aug_timestamps = []
 
         # df_obj = df.loc[df['object_id'] == 'ZTF20adaduxg'] # select data for object=object_name
-        # pred_flux, aug_timestamp = self.one_object_pred(df_obj)
+        # pred_flux, aug_timestamp = self.one_object_pred(df_obj, object_name=object)
         # pred_fluxes.append(pred_flux)
         # aug_timestamps.append(aug_timestamp)
         X_test = []
@@ -174,7 +174,7 @@ class FitNF():
             df_obj = df.loc[df['object_id'] == object] # select data for object=object_name
             true_value = int(df_obj['obj_type'].to_numpy()[0])
             y_test.append(true_value)
-            pred_flux, aug_timestamp = self.one_object_pred(df_obj)
+            pred_flux, aug_timestamp = self.one_object_pred(df_obj, object_name=object)
             pred_fluxes.append(pred_flux)
             # pred_flux.reshape((2, self.num_ts))
             mid = int(len(pred_flux)/2)
@@ -205,7 +205,7 @@ class FitNF():
         self.pred_fluxes = pred_fluxes
         self.aug_timestamps = aug_timestamps
     
-    def one_object_pred(self, df_obj):
+    def one_object_pred(self, df_obj, object_name):
         self.timestamp = np.asarray(df_obj['mjd']) # timestamp
         passbands = np.asarray(df_obj['passband']) # define passband
         # process passband to log(wavelength) [wavelegnth_arr]
@@ -247,6 +247,14 @@ class FitNF():
             loss_vals.append(float(loss))
             if ((epoch+1) % self.display_epochs == 0): 
                 print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, self.num_epochs, loss))
+        print("\nLoss graph saved in output directory")
+        plt.plot(range(self.num_epochs), loss_vals, label='Training Loss for '+object_name)
+        plt.title("Loss Graph")
+        plt.xlabel("Epochs")
+        plt.ylabel("Loss")
+        plt.legend(loc="upper right")
+        plt.savefig('plots/NF_Loss_Graph_'+object_name+'.png')
+        plt.clf()
         # prediction
         """
         format of X_pred = {
@@ -274,5 +282,26 @@ class FitNF():
             pred_flux.append(mean_flux)
             if (i+1)%32 == 0:
                 print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], pred_flux[i], i+1))
+        df_obj_pb_0 = df_obj
+        df_obj_pb_1 = df_obj
+        df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
+        df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
+        pb0_t = df_obj_pb_0['mjd']
+        pb0_flux = df_obj_pb_0['flux']
+        pb1_t = df_obj_pb_1['mjd']
+        pb1_flux = df_obj_pb_1['flux']
+        plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
+        plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
+
+        plt.plot(aug_timestamps, pred_flux[:self.num_ts], label='NF: PB=g', color='b')
+        plt.plot(aug_timestamps, pred_flux[-self.num_ts:], label='NF: PB=r', color='g')
+
+
+        plt.title("Flux against timestamp for "+object_name)
+        plt.xlabel("timestamp")
+        plt.ylabel("flux")
+        plt.legend(loc="upper right")
+        plt.savefig('plots/Light_Flux_NF_'+object_name+'.png')
+        plt.clf()
         return pred_flux, list(aug_timestamps)
 
