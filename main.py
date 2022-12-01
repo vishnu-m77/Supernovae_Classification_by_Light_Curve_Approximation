@@ -31,12 +31,12 @@ if __name__ == '__main__':
     nf_params = param["NF"]
     data_dir = 'data/ANTARES_NEW.csv'
     nf = NF.FitNF(data_dir, nf_params)
-    pred_flux = nf.pred_fluxes
-    pred_flux = np.array(pred_flux)
-    pred_flux = torch.from_numpy(np.array(pred_flux))
+    # pred_flux = nf.pred_fluxes
+    # pred_flux = np.array(pred_flux)
+    # pred_flux = torch.from_numpy(np.array(pred_flux))
     # print(pred_flux.size())
     # print(pred_flux)
-    aug_timestamp = nf.aug_timestamps[0]
+    # aug_timestamp = nf.aug_timestamps[0]
 
     # print("for passband 0 flux is {0}\n".format(pred_flux[:35]))
     # print("for passband 1 flux is {0}\n".format(pred_flux[-35:]))

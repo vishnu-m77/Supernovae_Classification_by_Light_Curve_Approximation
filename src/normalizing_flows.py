@@ -7,7 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import json
 import os
-import sys
+from joblib import Parallel, delayed
 
 """
 utility functions
@@ -169,32 +169,47 @@ class FitNF():
         df.loc[df['obj_type'] == 'SN Ia-CSM', 'obj_type'] = 1
         df.loc[df['obj_type'] != 1, 'obj_type'] = 0
 
+        outputs = Parallel(n_jobs=-1)(delayed(self.one_object_pred)(df.loc[df['object_id'] == object]) for object in objects)
+
+        pred_fluxes = [obj[0] for obj in outputs]
+        # print("PRED FLUXES:")
+        # print(pred_fluxes)
+        aug_timestamps = [obj[1] for obj in outputs]
+
         for object in objects:
-            print(object)
+            # print(object)
             df_obj = df.loc[df['object_id'] == object] # select data for object=object_name
             true_value = int(df_obj['obj_type'].to_numpy()[0])
             y_test.append(true_value)
-            pred_flux, aug_timestamp = self.one_object_pred(df_obj)
-            pred_fluxes.append(pred_flux)
-            # pred_flux.reshape((2, self.num_ts))
-            mid = int(len(pred_flux)/2)
-            temp = []
-            temp.append(pred_flux[:mid])
-            temp.append(pred_flux[mid: ])
-            X_test.append(temp)
-            aug_timestamps.append(aug_timestamp)
+            # pred_flux, aug_timestamp = self.one_object_pred(df_obj)
+            # pred_fluxes.append(pred_flux)
+            # # pred_flux.reshape((2, self.num_ts))
+            # mid = int(len(pred_flux)/2)
+            # temp = []
+            # temp.append(pred_flux[:mid])
+            # temp.append(pred_flux[mid: ])
+            # X_test.append(temp)
+            # aug_timestamps.append(aug_timestamp)
         
+        for obj in pred_fluxes:
+            mid = int(len(obj)/2)
+            temp = []
+            temp.append(obj[:mid])
+            temp.append(obj[mid: ])
+            X_test.append(temp)
         X_test = np.array(X_test)
+        # print("X_TEST")
+        # print(X_test)
         y_test = np.array(y_test)
         
         X_test_list = X_test.tolist()
         y_test_list = y_test.tolist()
         
-        with open(directory + "/X_test.json", 'w') as f:
-            json.dump(X_test_list, f)
+        # with open(directory + "/X_test.json", 'w') as f:
+        #     json.dump(X_test_list, f)
         
-        with open(directory + "/y_test.json", 'w') as f:
-            json.dump(y_test_list, f)
+        # with open(directory + "/y_test.json", 'w') as f:
+        #     json.dump(y_test_list, f)
 
         X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
         X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
@@ -206,47 +221,47 @@ class FitNF():
         self.aug_timestamps = aug_timestamps
     
     def one_object_pred(self, df_obj):
-        self.timestamp = np.asarray(df_obj['mjd']) # timestamp
+        timestamp = np.asarray(df_obj['mjd']) # timestamp
         passbands = np.asarray(df_obj['passband']) # define passband
         # process passband to log(wavelength) [wavelegnth_arr]
-        self.wavelength_arr = [] 
+        wavelength_arr = [] 
         for pb in passbands:
             if pb==0:
-                self.wavelength_arr.append(np.log10(4741.64))
+                wavelength_arr.append(np.log10(4741.64))
             elif pb==1:
-                self.wavelength_arr.append(np.log10(6173.23))
+                wavelength_arr.append(np.log10(6173.23))
             else:
                 print("Passband invalid")
-        self.flux = np.asarray(df_obj['flux'])
-        self.flux_err = np.asarray(df_obj['flux_err'])
+        flux = np.asarray(df_obj['flux'])
+        flux_err = np.asarray(df_obj['flux_err'])
 
-        self.X = []
-        self.y = []
-        for i in range(len(self.flux)):
-            self.X.append(np.array([self.timestamp[i], self.wavelength_arr[i]]))
-            self.y.append(np.array([self.flux[i], self.flux_err[i]]))
-        self.X = torch.from_numpy(np.array(self.X)).to(torch.float32)
-        self.y = torch.from_numpy(np.array(self.y)).to(torch.float32)
+        X = []
+        y = []
+        for i in range(len(flux)):
+            X.append(np.array([timestamp[i], wavelength_arr[i]]))
+            y.append(np.array([flux[i], flux_err[i]]))
+        X = torch.from_numpy(np.array(X)).to(torch.float32)
+        y = torch.from_numpy(np.array(y)).to(torch.float32)
 
-        self.NF = NormalizingFlowsBase(num_layers = 8)
+        NF = NormalizingFlowsBase(num_layers = 8)
         
-        optimizer = torch.optim.Adam(self.NF.parameters(), self.lr) 
+        optimizer = torch.optim.Adam(NF.parameters(), self.lr) 
         
-        X = StandardScaler().fit_transform(self.X)
+        X = StandardScaler().fit_transform(X)
         X = torch.from_numpy(X).to(torch.float32)
         y_transform = StandardScaler()
-        processed_flux = y_transform.fit_transform(self.y)
-        self.y = torch.from_numpy(processed_flux).to(torch.float32)
+        processed_flux = y_transform.fit_transform(y)
+        y = torch.from_numpy(processed_flux).to(torch.float32)
         loss_vals = []
         for epoch in range(self.num_epochs):
-            _ , log_likelihood = self.NF.full_forward_transform(X,self.y)
+            _ , log_likelihood = NF.full_forward_transform(X,y)
             loss = -log_likelihood
             optimizer.zero_grad()
             loss.backward()
             optimizer.step() 
             loss_vals.append(float(loss))
-            if ((epoch+1) % self.display_epochs == 0): 
-                print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, self.num_epochs, loss))
+            # if ((epoch+1) % self.display_epochs == 0): 
+            #     print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, self.num_epochs, loss))
         # prediction
         """
         format of X_pred = {
@@ -259,8 +274,8 @@ class FitNF():
             [timestamp_256, pb_2]]
         }
         """
-        print("\nSampling...\n")
-        X_pred, aug_timestamps = augmentation(timestamps=self.timestamp, num_timestamps = self.num_ts)
+        # print("\nSampling...\n")
+        X_pred, aug_timestamps = augmentation(timestamps=timestamp, num_timestamps = self.num_ts)
         if (X_pred!=None):
             X = StandardScaler().fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
@@ -269,10 +284,38 @@ class FitNF():
             
             flux_approx = []
             for j in range(self.num_samples):
-                flux_approx.append(y_transform.inverse_transform(np.expand_dims(self.NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
+                flux_approx.append(y_transform.inverse_transform(np.expand_dims(NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
             mean_flux = sum(flux_approx)/len(flux_approx)
             pred_flux.append(mean_flux)
-            if (i+1)%32 == 0:
-                print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], pred_flux[i], i+1))
-        return pred_flux, list(aug_timestamps)
+            # if (i+1)%32 == 0:
+            #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], pred_flux[i], i+1))
+
+        df_obj_pb_0 = df_obj
+        df_obj_pb_1 = df_obj
+        df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
+        df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
+        pb0_t = df_obj_pb_0['mjd']
+        pb0_flux = df_obj_pb_0['flux']
+        pb1_t = df_obj_pb_1['mjd']
+        pb1_flux = df_obj_pb_1['flux']
+        plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
+        plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
+
+        plt.plot(aug_timestamps, pred_flux[:self.num_ts], label='NF: PB=g', color='b')
+        plt.plot(aug_timestamps, pred_flux[-self.num_ts:], label='NF: PB=r', color='g')
+
+
+        plt.title("Flux against timestamp for ")
+        plt.xlabel("timestamp")
+        plt.ylabel("flux")
+        plt.legend(loc="upper right")
+        num = np.random.randint(-1000,1000)
+        plt.savefig('plots/Light_Flux_NF_'+str(num) +'.png')
+        plt.clf()
+
+        output = []
+        output.append(pred_flux)
+        output.append(list(aug_timestamps))
+
+        return output
 

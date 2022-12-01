@@ -192,15 +192,15 @@ def classification(directory, img_file, lbl_file, param, nf):
     print('Finished Training')
     X_test = nf.X_test
     y_test = nf.y_test
-    print(X_test)
+    # print(X_test)
     print(y_test)
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     print(y_test_pred)
-    with open(directory + "/y_test_pred.json", 'w') as f:
-        for i in y_test_pred:
-            json.dump(i, f)
-            json.dump("\n", f)
+    # with open(directory + "/y_test_pred.json", 'w') as f:
+    #     for i in y_test_pred:
+    #         json.dump(i, f)
+    #         json.dump("\n", f)
     
     
     # report = gen_report(y_test, y_test_pred)
