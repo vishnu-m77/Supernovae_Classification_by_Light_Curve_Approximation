@@ -169,7 +169,7 @@ class FitNF():
         df.loc[df['obj_type'] == 'SN Ia-CSM', 'obj_type'] = 1
         df.loc[df['obj_type'] != 1, 'obj_type'] = 0
 
-        outputs = Parallel(n_jobs=-1)(delayed(self.one_object_pred)(df.loc[df['object_id'] == object]) for object in objects)
+        outputs = Parallel(n_jobs=-1)(delayed(self.one_object_pred)(df.loc[df['object_id'] == object], object) for object in objects)
 
         pred_fluxes = [obj[0] for obj in outputs]
         # print("PRED FLUXES:")
@@ -220,7 +220,7 @@ class FitNF():
         self.pred_fluxes = pred_fluxes
         self.aug_timestamps = aug_timestamps
     
-    def one_object_pred(self, df_obj):
+    def one_object_pred(self, df_obj, obj_name):
         timestamp = np.asarray(df_obj['mjd']) # timestamp
         passbands = np.asarray(df_obj['passband']) # define passband
         # process passband to log(wavelength) [wavelegnth_arr]
@@ -309,8 +309,8 @@ class FitNF():
         plt.xlabel("timestamp")
         plt.ylabel("flux")
         plt.legend(loc="upper right")
-        num = np.random.randint(-1000,1000)
-        plt.savefig('plots/Light_Flux_NF_'+str(num) +'.png')
+        # num = np.random.randint(-1000,1000)
+        plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
         plt.clf()
 
         output = []
