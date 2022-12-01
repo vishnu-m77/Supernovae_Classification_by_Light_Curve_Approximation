@@ -7,6 +7,7 @@ import matplotlib.pyplot as plt
 # import classification
 from src.CNN import classification as CNN
 import src.normalizing_flows as NF
+import sys
 
 
 if __name__ == '__main__':

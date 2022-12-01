@@ -11,6 +11,7 @@ import os
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
 from sklearn.utils import resample
 import json
+import sys
 
 warnings.filterwarnings('ignore')
 
@@ -65,10 +66,12 @@ def classification(directory, img_file, lbl_file, param, nf):
     all_target_classes = []
     n_epochs = param["n_epochs"]
     display_epochs = param["display_epochs"]
-
-    with open(directory + img_file, 'r') as f:
+    img_file = os.path.join(directory, "data/images.json")
+    lbl_file = os.path.join(directory, "data/labels.json")
+    
+    with open(img_file, 'r') as f:
         all_data = json.load(f)
-    with open(directory + lbl_file, 'r') as f:
+    with open(lbl_file, 'r') as f:
         all_target_classes = json.load(f)
     
     all_data = np.array(all_data)
@@ -195,7 +198,9 @@ def classification(directory, img_file, lbl_file, param, nf):
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     print(y_test_pred)
     with open(directory + "/y_test_pred.json", 'w') as f:
-            json.dump(y_test_pred, f)
+        for i in y_test_pred:
+            json.dump(i, f)
+            json.dump("\n", f)
     
     
     # report = gen_report(y_test, y_test_pred)

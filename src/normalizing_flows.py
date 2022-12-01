@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 import matplotlib.pyplot as plt
 import json
 import os
+import sys
 
 """
 utility functions
@@ -29,7 +30,7 @@ def mask_inputs(nn_input, layer):
         mask_prime = torch.tensor([1.,0.]).to(torch.float32)
     return nn_masked_mat, var_mask,mask_prime
 
-def augmentation(timestamps, wavelengths=np.array([np.log10(3751.36), np.log10(4741.64)]), num_timestamps=128):
+def augmentation(timestamps, wavelengths=np.array([np.log10(4741.64), np.log10(6173.23)]), num_timestamps=256):
     """
     augments the data for flux interpolation
     """
@@ -146,6 +147,7 @@ class FitNF():
         with open(directory + "/objects.json", 'w') as f:
             for object in objects:
                 json.dump(object, f)
+                json.dump("\n", f)
 
         pred_fluxes = []
         aug_timestamps = []
@@ -193,7 +195,8 @@ class FitNF():
         
         with open(directory + "/y_test.json", 'w') as f:
             json.dump(y_test_list, f)
-        
+
+        X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
         X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
         y_test = torch.from_numpy(np.array(y_test)).to(torch.float32)
         
@@ -209,9 +212,9 @@ class FitNF():
         self.wavelength_arr = [] 
         for pb in passbands:
             if pb==0:
-                self.wavelength_arr.append(np.log10(3751.36))
-            elif pb==1:
                 self.wavelength_arr.append(np.log10(4741.64))
+            elif pb==1:
+                self.wavelength_arr.append(np.log10(6173.23))
             else:
                 print("Passband invalid")
         self.flux = np.asarray(df_obj['flux'])
