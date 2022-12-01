@@ -28,7 +28,7 @@ def mask_inputs(nn_input, layer):
         mask_prime = torch.tensor([1.,0.]).to(torch.float32)
     return nn_masked_mat, var_mask,mask_prime
 
-def augmentation(timestamps, wavelengths=np.array([np.log10(3751.36), np.log10(4741.64)]), num_timestamps=128):
+def augmentation(timestamps, wavelengths=np.array([np.log10(4741.64), np.log10(6173.23)]), num_timestamps=128):
     """
     augments the data for flux interpolation
     """
@@ -143,8 +143,8 @@ class FitNF():
         pred_fluxes = []
         aug_timestamps = []
 
-        # df_obj = df.loc[df['object_id'] == 'ZTF20adaduxg'] # select data for object=object_name
-        # pred_flux, aug_timestamp = self.one_object_pred(df_obj)
+        # df_obj = df.loc[df['object_id'] == 'ZTF20aahbamv'] # select data for object=object_name
+        # pred_flux, aug_timestamp = self.one_object_pred(df_obj, 'ZTF20aahbamv')
         # pred_fluxes.append(pred_flux)
         # aug_timestamps.append(aug_timestamp)
         X_test = []
@@ -192,9 +192,9 @@ class FitNF():
         self.wavelength_arr = [] 
         for pb in passbands:
             if pb==0:
-                self.wavelength_arr.append(np.log10(3751.36))
+                self.wavelength_arr.append(np.log10(4741.64)) #3751.36
             elif pb==1:
-                self.wavelength_arr.append(np.log10(4741.64))
+                self.wavelength_arr.append(np.log10(6173.23))
             else:
                 print("Passband invalid")
         self.flux = np.asarray(df_obj['flux'])
@@ -233,7 +233,7 @@ class FitNF():
         plt.xlabel("Epochs")
         plt.ylabel("Loss")
         plt.legend(loc="upper right")
-        plt.savefig('plots2/NF_Loss_Graph_'+object_name+'.png')
+        plt.savefig('plots/NF_Loss_Graph_'+object_name+'.png')
         plt.clf()
         # prediction
         """
@@ -282,7 +282,7 @@ class FitNF():
         plt.xlabel("timestamp")
         plt.ylabel("flux")
         plt.legend(loc="upper right")
-        plt.savefig('plots2/Light_Flux_NF_'+object_name+'.png')
+        plt.savefig('plots/Light_Flux_NF_'+object_name+'.png')
         plt.clf()
         return pred_flux, list(aug_timestamps)
 
