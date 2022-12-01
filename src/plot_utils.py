@@ -54,8 +54,8 @@ def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title=
     title = 'flux vs timestamp '+ object_ 
     filesavepath = 'plots/Light_Curve_Flux_NF_'+object_+'.png'
     plot_light_curves(anobject, predDf, passband2name, filesavepath, title)
-    plt.show()
-    plt.clf()
+   
+    #plt.clf()
 
 '''calling code'''
 
