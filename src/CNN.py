@@ -41,13 +41,17 @@ class Net(nn.Module):
         x = self.cnn(x)
         return x
 
-def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
+def gen_report(y_test, y_test_pred, n_iters=1000):
     
     metrics = []
     inds = np.arange(len(y_test))
     for i in range(n_iters):
         inds_boot = resample(inds)
         roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
+        try:
+            roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
+        except ValueError:
+            roc_auc = 0
         logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
         accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
         precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
@@ -66,6 +70,9 @@ def classification(directory, img_file, lbl_file, param, nf):
     all_target_classes = []
     n_epochs = param["n_epochs"]
     display_epochs = param["display_epochs"]
+    lr = param["lr"]
+    weight_decay = param["weight_decay"]
+    
     img_file = os.path.join(directory, "data/images.json")
     lbl_file = os.path.join(directory, "data/labels.json")
     
@@ -116,7 +123,7 @@ def classification(directory, img_file, lbl_file, param, nf):
     
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
-    optimizer = optim.Adam(net.parameters(), lr=0.0002, weight_decay=0.001)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
+    optimizer = optim.Adam(net.parameters(), lr = lr, weight_decay = weight_decay)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
     epochs = np.arange(n_epochs)
 
     best_loss_val = float('inf')
@@ -203,5 +210,5 @@ def classification(directory, img_file, lbl_file, param, nf):
     #         json.dump("\n", f)
     
     
-    # report = gen_report(y_test, y_test_pred)
-    # print(report)
+    report = gen_report(y_test, y_test_pred, len(y_test))
+    print(report)
