@@ -139,8 +139,8 @@ class FitNF():
         objects = df['object_id'].unique()
         np.random.shuffle(objects)
 
-        if num_objects < len(objects):
-            objects = objects[:num_objects]
+        # if num_objects < len(objects):
+        #     objects = objects[:num_objects]
             
         directory = os.path.dirname(__file__)
             
@@ -225,11 +225,11 @@ class FitNF():
         X_test_list = X_test.tolist()
         y_test_list = y_test.tolist()
         
-        # with open(directory + "/X_test.json", 'w') as f:
-        #     json.dump(X_test_list, f)
+        with open(directory + "/../X_test.json", 'w') as f:
+            json.dump(X_test_list, f)
         
-        # with open(directory + "/y_test.json", 'w') as f:
-        #     json.dump(y_test_list, f)
+        with open(directory + "/../y_test.json", 'w') as f:
+            json.dump(y_test_list, f)
 
         X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
         X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
@@ -281,7 +281,7 @@ class FitNF():
             optimizer.step() 
             loss_vals.append(float(loss))
             # if ((epoch+1) % self.display_epochs == 0): 
-            #     print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, self.num_epochs, loss))
+        print ('Train Loss : {:.4f}'.format(loss))
         # prediction
         """
         format of X_pred = {
@@ -322,20 +322,20 @@ class FitNF():
         pb0_flux = df_obj_pb_0['flux']
         pb1_t = df_obj_pb_1['mjd']
         pb1_flux = df_obj_pb_1['flux']
-        plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
-        plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
+        # plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
+        # plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
 
-        plt.plot(aug_timestamps, flux_pred[:self.num_ts], label='NF: PB=g', color='b')
-        plt.plot(aug_timestamps, flux_pred[-self.num_ts:], label='NF: PB=r', color='g')
+        # plt.plot(aug_timestamps, flux_pred[:self.num_ts], label='NF: PB=g', color='b')
+        # plt.plot(aug_timestamps, flux_pred[-self.num_ts:], label='NF: PB=r', color='g')
 
 
-        plt.title("Flux against timestamp for " + obj_name)
-        plt.xlabel("timestamp")
-        plt.ylabel("flux")
-        plt.legend(loc="upper right")
-        # num = np.random.randint(-1000,1000)
-        plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
-        plt.clf()
+        # plt.title("Flux against timestamp for " + obj_name)
+        # plt.xlabel("timestamp")
+        # plt.ylabel("flux")
+        # plt.legend(loc="upper right")
+        # # num = np.random.randint(-1000,1000)
+        # plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
+        # plt.clf()
 
         output = []
         output.append(flux_pred)

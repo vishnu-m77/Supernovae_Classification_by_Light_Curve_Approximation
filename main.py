@@ -32,12 +32,12 @@ if __name__ == '__main__':
     nf_params = param["NF"]
     data_dir = 'data/ANTARES_NEW.csv'
     nf = NF.FitNF(data_dir, nf_params)
-    flux_pred = nf.flux_pred
-    flux_err = nf.flux_err
-    flux = nf.flux
-    flux_err_pred = nf.flux_err_pred
-    metrics = met.regression_quality_metrics_report(flux, flux_pred, flux_err, flux_err_pred)
-    print(metrics)
+    # flux_pred = nf.flux_pred
+    # flux_err = nf.flux_err
+    # flux = nf.flux
+    # flux_err_pred = nf.flux_err_pred
+    # metrics = met.regression_quality_metrics_report(flux, flux_pred, flux_err, flux_err_pred)
+    # print(metrics)
     
     # flux_pred = np.array(flux_pred)
     # flux_pred = torch.from_numpy(np.array(flux_pred))
@@ -55,8 +55,8 @@ if __name__ == '__main__':
     # print("augmented timestamp is {0}".format(aug_timestamp))
     # Input heat map into CNN for binary classification
     directory = os.path.dirname(__file__)
-    img_file = "data\images.json"
-    lbl_file = "data\labels.json"
+    img_file = "data\X_test.json"
+    lbl_file = "data\y_test.json"
 
     cnn_params = param["CNN"]
     # nf = 1

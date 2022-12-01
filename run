@@ -1,0 +1,10 @@
+#!/bin/bash
+echo "This is a shell script"
+git add X_test.json
+git add y_test.json
+git add src/CNN.py
+git add src/normalizing_flows.py
+git add main.py
+git commit -m "NF Prediction for 100 objects"
+git push
+echo "Done."
