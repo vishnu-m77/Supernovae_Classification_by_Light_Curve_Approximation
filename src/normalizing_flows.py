@@ -4,6 +4,7 @@ import numpy as np
 from torch import nn
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from src.plot_utils import plotLightCurve
 import matplotlib.pyplot as plt
 import json
 import os
@@ -314,29 +315,31 @@ class FitNF():
             # if (i+1)%32 == 0:
             #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], flux_pred[i], i+1))
 
-        df_obj_pb_0 = df_obj
-        df_obj_pb_1 = df_obj
-        df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
-        df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
-        pb0_t = df_obj_pb_0['mjd']
-        pb0_flux = df_obj_pb_0['flux']
-        pb1_t = df_obj_pb_1['mjd']
-        pb1_flux = df_obj_pb_1['flux']
-        plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
-        plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
+        # df_obj_pb_0 = df_obj
+        # df_obj_pb_1 = df_obj
+        # df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
+        # df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
+        # pb0_t = df_obj_pb_0['mjd']
+        # pb0_flux = df_obj_pb_0['flux']
+        # pb1_t = df_obj_pb_1['mjd']
+        # pb1_flux = df_obj_pb_1['flux']
+        # plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
+        # plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
 
-        plt.plot(aug_timestamps, flux_pred[:self.num_ts], label='NF: PB=g', color='b')
-        plt.plot(aug_timestamps, flux_pred[-self.num_ts:], label='NF: PB=r', color='g')
+        # plt.plot(aug_timestamps, flux_pred[:self.num_ts], label='NF: PB=g', color='b')
+        # plt.plot(aug_timestamps, flux_pred[-self.num_ts:], label='NF: PB=r', color='g')
 
 
-        plt.title("Flux against timestamp for " + obj_name)
-        plt.xlabel("timestamp")
-        plt.ylabel("flux")
-        plt.legend(loc="upper right")
-        # num = np.random.randint(-1000,1000)
-        plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
-        plt.clf()
-
+        # plt.title("Flux against timestamp for " + obj_name)
+        # plt.xlabel("timestamp")
+        # plt.ylabel("flux")
+        # plt.legend(loc="upper right")
+        # # num = np.random.randint(-1000,1000)
+        # plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
+        # plt.clf()
+    
+        passband2name = {0: 'g', 1: 'r'}
+        plotLightCurve(obj_name, df_obj, flux_pred, aug_timestamps, passband2name)
         output = []
         output.append(flux_pred)
         output.append(list(aug_timestamps))

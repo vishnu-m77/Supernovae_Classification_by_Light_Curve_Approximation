@@ -33,7 +33,7 @@ def plot_light_curves(anobject, predDf, passband2name, filesavepath, title=''):
     plt.title(title)
     plt.savefig(filesavepath)
 
-def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title):
+def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title=''):
     '''
     Parameters:
     object_: Name of the object for which plot is to be made
