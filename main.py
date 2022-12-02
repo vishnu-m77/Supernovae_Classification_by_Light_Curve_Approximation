@@ -62,7 +62,7 @@ if __name__ == '__main__':
     lbl_file = "data\y_test.json"
 
     cnn_params = param["CNN"]
-    # nf = 1
+    nf = 1
     CNN(directory, img_file, lbl_file, cnn_params, nf)
     # Regression and Performance metrics
     # Visualization and Report

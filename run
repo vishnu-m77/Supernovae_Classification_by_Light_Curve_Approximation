@@ -5,6 +5,8 @@ git add y_test.json
 git add src/CNN.py
 git add src/normalizing_flows.py
 git add main.py
+git add out.txt
+git add param/param.json
 git commit -m "NF Prediction for 100 objects"
 git push
 echo "Done."
