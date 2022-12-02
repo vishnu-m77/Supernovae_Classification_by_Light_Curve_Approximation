@@ -63,7 +63,7 @@ if __name__ == '__main__':
 
     cnn_params = param["CNN"]
     # nf = 1
-    #CNN(directory, img_file, lbl_file, cnn_params, nf)
+    CNN(directory, img_file, lbl_file, cnn_params, nf)
     # Regression and Performance metrics
     # Visualization and Report
     
