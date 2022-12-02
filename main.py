@@ -5,6 +5,9 @@ import json
 import matplotlib.pyplot as plt
 # import classification
 import CNN
+import CNNMetrics
+from matplotlib.backends.backend_pdf import PdfPages
+import PyPDF2
 
 
 if __name__ == '__main__':
@@ -25,7 +28,21 @@ if __name__ == '__main__':
     # Load data
     # Run Normalizing Flows to obtain the approximate light curve
     # Input heat map into CNN for binary classification
-    CNN.classification()
+    y_test, y_test_pred = CNN.classification()
+    report = CNNMetrics.gen_report( y_test, y_test_pred)
+
+    print(report)
+
+    
+    fig , ax = plt.subplots(figsize=(5, 7))
+    ax.axis('tight')
+    ax.axis('off')
+    the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
+
+    pp = PdfPages("Metrics.pdf")
+    pp.savefig(fig, bbox_inches='tight')
+    pp.close()
+
     # Regression and Performance metrics
     # Visualization and Report
     
