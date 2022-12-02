@@ -1,6 +1,7 @@
 import argparse
 import os
 import torch
+import pandas as pd
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -44,7 +45,23 @@ if __name__ == '__main__':
     #metrics = met.regression_quality_metrics_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
     metrics = met.generate_NF_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
     print(metrics)
+    metrics.to_csv('nfmetrics.csv')
+  
+       
+
+
+    # fig , ax = plt.subplots(figsize=(5, 7))
+    # ax.axis('tight')
+    # ax.axis('off')
+    # the_table = ax.table(cellText=metrics.values, colLabels=metrics.columns, loc = 'center')
+
+    # pp = PdfPages("NFMetrics.pdf")
+    # pp.savefig(fig, bbox_inches='tight')
+    # pp.close()
+
    
+    
+    
     flux_pred = np.array(flux_pred)
     flux_pred = torch.from_numpy(np.array(flux_pred))
     print(flux_pred.size())
@@ -69,7 +86,7 @@ if __name__ == '__main__':
         obj_name = objects[i]
         df_obj = df.loc[df['object_id'] == obj_name] # select data for object=object_name
         plotLightCurve(obj_name, df_obj, flux_pred[i], nf.aug_timestamps[i], passband2name)
-        break
+       
     directory = os.path.dirname(__file__)
     img_file = "data\X_test.json"
     lbl_file = "data\y_test.json"
@@ -78,20 +95,20 @@ if __name__ == '__main__':
     # nf = 1
     
     y_test, y_test_pred = CNN(directory, img_file, lbl_file, cnn_params, nf)
-    #report = CNNMetrics.gen_report(y_test, y_test_pred)
+    report = CNNMetrics.gen_report(y_test, y_test_pred)
 
-    #print(report)
+    print(report)
 
-    #fig , ax = plt.subplots(figsize=(5, 7))
-    #ax.axis('tight')
-    #ax.axis('off')
-    #the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
+    fig , ax = plt.subplots(figsize=(5, 7))
+    ax.axis('tight')
+    ax.axis('off')
+    the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
 
-    # pp = PdfPages("Metrics.pdf")
-    # pp.savefig(fig, bbox_inches='tight')
-    # pp.close()
+    pp = PdfPages("Metrics.pdf")
+    pp.savefig(fig, bbox_inches='tight')
+    pp.close()
 
-    # # Regression and Performance metrics
-    # # Visualization and Report
+    # Regression and Performance metrics
+    # Visualization and Report
     
-    # print("Hello")
+    print("Hello")

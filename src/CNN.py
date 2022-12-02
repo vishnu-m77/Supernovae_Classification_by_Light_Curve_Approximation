@@ -15,14 +15,15 @@ import sys
 
 warnings.filterwarnings('ignore')
 
-class Net(nn.Module):
+class Net(nn.Module): 
     def __init__(self):
-        super(Net, self).__init__()
-        self.cnn = nn.Sequential(
-                                    nn.Conv1d(2, 8, 3, padding=1),
-                                    nn.LayerNorm((8, 256)),
-                                    nn.ReLU(),
-                                    nn.MaxPool1d(2),
+        super(Net, self).__init__() 
+        #Defining CNN sequential model
+        self.cnn = nn.Sequential( 
+                                    nn.Conv1d(2, 8, 3, padding=1), # 1D convolution 
+                                    nn.LayerNorm((8, 256)), #Normalisation layer
+                                    nn.ReLU(), # Using Relu Activation
+                                    nn.MaxPool1d(2), #Applying Max pooling
                                     nn.Conv1d(8, 16, 3, padding=1),
                                     nn.LayerNorm((16, 128)),
                                     nn.ReLU(),
@@ -37,13 +38,20 @@ class Net(nn.Module):
                                     nn.Sigmoid()
                                 )
 
-    def forward(self, x):
+    def forward(self, x): 
         x = self.cnn(x)
         return x
 
 
-def classification(directory, img_file, lbl_file, param, nf):
-    all_data = []
+def classification(directory, img_file, lbl_file, param, nf): 
+    '''
+    Params:
+    directory: Path of images and labels
+    img_file: Name of the image file
+    lbl_file: Name of label file
+    param: hyperparameters for model training
+    '''
+    all_data = [] 
     all_target_classes = []
     n_epochs = param["n_epochs"]
     display_epochs = param["display_epochs"]
@@ -53,6 +61,7 @@ def classification(directory, img_file, lbl_file, param, nf):
     # img_file = os.path.join(directory, "X_test.json")
     # lbl_file = os.path.join(directory, "y_test.json")
     
+    #reading images and labels
     img_file = os.path.join(directory, "data/images.json")
     lbl_file = os.path.join(directory, "data/labels.json")
     
@@ -61,7 +70,8 @@ def classification(directory, img_file, lbl_file, param, nf):
     with open(lbl_file, 'r') as f:
         all_target_classes = json.load(f)
     
-    all_data = np.array(all_data)
+    #type conversion to numpy arrays
+    all_data = np.array(all_data) 
     all_target_classes = np.array(all_target_classes)
     print(all_data)
     print(all_target_classes)
@@ -70,7 +80,8 @@ def classification(directory, img_file, lbl_file, param, nf):
     # normalize input data
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
     # print(all_data.size)
-
+   
+    # Defining train and test size
     train_size = int(0.7*len(all_data))
     val_size = int(0.3*len(all_data))
     # test_size = int(0.2*len(all_data))
@@ -82,6 +93,7 @@ def classification(directory, img_file, lbl_file, param, nf):
         X_train.append(all_data[i])
         y_train.append(all_target_classes[i])
     
+    #Converting to torch tensors
     X_train = torch.from_numpy(np.array(X_train))
     y_train = torch.from_numpy(np.array(y_train))
     
@@ -102,7 +114,8 @@ def classification(directory, img_file, lbl_file, param, nf):
     
     # X_test = torch.from_numpy(np.array(X_test))
     # y_test = torch.from_numpy(np.array(y_test))
-    
+   
+    #defining model metrics and optimiser
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
     optimizer = optim.Adam(net.parameters(), lr = lr, weight_decay = weight_decay)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
@@ -110,7 +123,9 @@ def classification(directory, img_file, lbl_file, param, nf):
 
     best_loss_val = float('inf')
     best_state_on_val = None
-
+    
+    # Training the model 
+    
     for epoch in list(epochs):  # loop over the dataset multiple times
         epoch_loss = 0.0
         net.train()
@@ -153,7 +168,7 @@ def classification(directory, img_file, lbl_file, param, nf):
                 sys.stdout = f
                 print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
                 sys.stdout = original_stdout
-
+        #model evaluation
         net.eval()
         epoch_loss_val = 0.0
         for i in range(val_size):
@@ -186,6 +201,9 @@ def classification(directory, img_file, lbl_file, param, nf):
     print('Finished Training')
     # X_test = nf.X_test
     # y_test = nf.y_test
+    
+    #Generating model metrics
+    
     img_file = os.path.join(directory, "X_test.json")
     lbl_file = os.path.join(directory, "y_test.json")
     
