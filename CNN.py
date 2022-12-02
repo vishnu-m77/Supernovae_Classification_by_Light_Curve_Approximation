@@ -11,6 +11,7 @@ import os
 from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.utils import resample
 import json
+from matplotlib.backends.backend_pdf import PdfPages
 warnings.filterwarnings('ignore')
 
 class Net(nn.Module):
@@ -193,3 +194,13 @@ def classification(n_epoches = 10):
     
     report = gen_report(y_test, y_test_pred)
     print(report)
+    
+    fig , ax = plt.subplots(figsize=(5, 10))
+    ax.axis('tight')
+    ax.axis('off')
+    the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
+
+    pp = PdfPages("Metrics.pdf")
+    pp.savefig(fig, bbox_inches='tight')
+    pp.close()
+
