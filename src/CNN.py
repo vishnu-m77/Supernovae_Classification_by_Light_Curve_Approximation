@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.optim as optim
 from copy import deepcopy
 import os
-from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
+from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.utils import resample
 import json
 import sys
@@ -41,29 +41,6 @@ class Net(nn.Module):
         x = self.cnn(x)
         return x
 
-def gen_report(y_test, y_test_pred, n_iters=1000):
-    
-    metrics = []
-    inds = np.arange(len(y_test))
-    for i in range(n_iters):
-        inds_boot = resample(inds)
-        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        try:
-            roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        except ValueError:
-            roc_auc = 0
-        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
-        accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
-        pr_auc = auc(recall, precision)
-        recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
-    metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
-                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
-                          index=['mean', 'std'])
-    return report
 
 def classification(directory, img_file, lbl_file, param, nf):
     all_data = []
@@ -207,10 +184,8 @@ def classification(directory, img_file, lbl_file, param, nf):
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     print(y_test_pred)
     
-    report = gen_report(y_test, y_test_pred, len(y_test))
-    print(report)
-    
     y_test_pred = np.array(y_test_pred)
     y_test_pred_list = y_test_pred.tolist()
     with open(directory + "/y_test_pred.json", 'w') as f:
         json.dump(y_test_pred_list, f)
+    return y_test, y_test_pred
