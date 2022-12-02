@@ -36,8 +36,11 @@ if __name__ == '__main__':
     flux_err = nf.flux_err
     flux = nf.flux
     flux_err_pred = nf.flux_err_pred
-    metrics = met.regression_quality_metrics_report(flux, flux_pred, flux_err, flux_err_pred)
-    print(metrics)
+    flux_pred_metrics = nf.flux_pred_metrics
+    flux_err_pred_metrics = nf.flux_err_pred_metrics
+    #metrics = met.regression_quality_metrics_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    met.generate_NF_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    #print(metrics)
     
     # flux_pred = np.array(flux_pred)
     # flux_pred = torch.from_numpy(np.array(flux_pred))
@@ -55,12 +58,12 @@ if __name__ == '__main__':
     # print("augmented timestamp is {0}".format(aug_timestamp))
     # Input heat map into CNN for binary classification
     directory = os.path.dirname(__file__)
-    img_file = "data\images.json"
-    lbl_file = "data\labels.json"
+    img_file = "data\X_test.json"
+    lbl_file = "data\y_test.json"
 
     cnn_params = param["CNN"]
     # nf = 1
-    CNN(directory, img_file, lbl_file, cnn_params, nf)
+    #CNN(directory, img_file, lbl_file, cnn_params, nf)
     # Regression and Performance metrics
     # Visualization and Report
     

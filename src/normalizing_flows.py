@@ -179,6 +179,8 @@ class FitNF():
         flux = [obj[2] for obj in outputs]
         flux_err = [obj[3] for obj in outputs]
         flux_err_pred = [obj[4] for obj in outputs]
+        flux_pred_metrics = [obj[5] for obj in outputs]
+        flux_err_pred_metrics = [obj[6] for obj in outputs]
 
         for object in objects:
             # print(object)
@@ -192,6 +194,8 @@ class FitNF():
         flux = np.array(flux)
         flux_err = np.array(flux_err)
         flux_err_pred = np.array(flux_err_pred)
+        flux_pred_metrics = np.array(flux_pred_metrics)
+        flux_err_pred_metrics = np.array(flux_err_pred_metrics)
         
         # print(flux)
         # print(flux_err)
@@ -211,6 +215,8 @@ class FitNF():
         self.flux = flux
         self.flux_err = flux_err
         self.flux_err_pred = flux_err_pred
+        self.flux_pred_metrics = flux_pred_metrics
+        self.flux_err_pred_metrics = flux_err_pred_metrics
         
         for obj in flux_pred:
             mid = int(len(obj)/2)
@@ -226,11 +232,11 @@ class FitNF():
         X_test_list = X_test.tolist()
         y_test_list = y_test.tolist()
         
-        # with open(directory + "/X_test.json", 'w') as f:
-        #     json.dump(X_test_list, f)
+        with open(directory + "/../X_test.json", 'w') as f:
+            json.dump(X_test_list, f)
         
-        # with open(directory + "/y_test.json", 'w') as f:
-        #     json.dump(y_test_list, f)
+        with open(directory + "/../y_test.json", 'w') as f:
+            json.dump(y_test_list, f)
 
         X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
         X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
@@ -267,7 +273,7 @@ class FitNF():
         NF = NormalizingFlowsBase(num_layers = 8)
         
         optimizer = torch.optim.Adam(NF.parameters(), self.lr) 
-        
+        untransformed_X = X
         X = StandardScaler().fit_transform(X)
         X = torch.from_numpy(X).to(torch.float32)
         y_transform = StandardScaler()
@@ -282,7 +288,7 @@ class FitNF():
             optimizer.step() 
             loss_vals.append(float(loss))
             # if ((epoch+1) % self.display_epochs == 0): 
-            #     print ('Epoch [{}/{}]\tTrain Loss : {:.4f}'.format(epoch+1, self.num_epochs, loss))
+        print ('Train Loss : {:.4f}'.format(loss))
         # prediction
         """
         format of X_pred = {
@@ -297,6 +303,20 @@ class FitNF():
         """
         # print("\nSampling...\n")
         X_pred, aug_timestamps = augmentation(timestamps=timestamp, num_timestamps = self.num_ts)
+        flux_pred_metrics = []
+        flux_err_pred_metrics = []
+        num_datapoints = len(X)
+        for i in range(num_datapoints):          
+            flux_approx = []
+            for j in range(self.num_samples):
+                flux_approx.append(y_transform.inverse_transform(np.expand_dims(NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
+            flux_approx = np.array(flux_approx)
+            mean_flux = sum(flux_approx)/len(flux_approx) # flux_approx.std(axis=0)
+            std_flux = flux_approx.std(axis=0)
+            flux_pred_metrics.append(mean_flux)
+            flux_err_pred_metrics.append(std_flux)
+            # if (i+1)%32 == 0:
+            #    print("For datapoint {0}, predicted flux is : {1}, [{2}/{3}]".format(untransformed_X[i],flux_pred_metrics[i], i+1, num_datapoints))
         if (X_pred!=None):
             X = StandardScaler().fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
@@ -346,6 +366,8 @@ class FitNF():
         output.append(flux)
         output.append(flux_err)
         output.append(flux_err_pred)
+        output.append(flux_pred_metrics)
+        output.append(flux_err_pred_metrics)
         
         print("Predicted object " + obj_name)
 
