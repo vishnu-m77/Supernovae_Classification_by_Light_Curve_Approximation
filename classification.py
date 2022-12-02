@@ -118,6 +118,7 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
     report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision', 'RMSE', 'MAE', 'MAPE'], 
                           data=[metrics.mean(axis=0), metrics.std(axis=0)], 
                           index=['mean', 'std'])
+    
     return report
 
 def classification(n_epoches = 10):
