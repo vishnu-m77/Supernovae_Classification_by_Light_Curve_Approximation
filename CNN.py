@@ -40,29 +40,6 @@ class Net(nn.Module):
         x = self.cnn(x)
         return x
 
-def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
-    
-    metrics = []
-    inds = np.arange(len(y_test))
-    for i in range(n_iters):
-        inds_boot = resample(inds)
-        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
-        accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
-        pr_auc = auc(recall, precision)
-        recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        RMSE = mean_squared_error(y_test[inds_boot], y_test_pred[inds_boot], squared=False)             # Mean Sqaure Error
-        MAE = mean_absolute_error(y_test[inds_boot], y_test_pred[inds_boot]) 
-        MAPE = mean_absolute_percentage_error(y_test[inds_boot], y_test_pred[inds_boot])
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision, RMSE, MAE, MAPE])
-    metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision', 'RMSE', 'MAE', 'MAPE'],
-                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
-                          index=['mean', 'std'])
-    
-    return report
 
 def classification(n_epoches = 10):
     all_data = []
@@ -187,20 +164,7 @@ def classification(n_epoches = 10):
     # plt.legend(['train_loss', 'val_loss'])        
     # plt.show()
 
-    net.load_state_dict(best_state_on_val)
-    
-    print('Finished Training')
-    y_test_pred = net(X_test).detach().numpy()[:, 0]
-    
+    return y_test, y_test_pred
+   
+   
     report = gen_report(y_test, y_test_pred)
-    print(report)
-    
-    fig , ax = plt.subplots(figsize=(5, 10))
-    ax.axis('tight')
-    ax.axis('off')
-    the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
-
-    pp = PdfPages("Metrics.pdf")
-    pp.savefig(fig, bbox_inches='tight')
-    pp.close()
-
