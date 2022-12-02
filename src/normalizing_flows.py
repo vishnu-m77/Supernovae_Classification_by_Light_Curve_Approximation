@@ -4,6 +4,7 @@ import numpy as np
 from torch import nn
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
+from src.plot_utils import plotLightCurve
 import matplotlib.pyplot as plt
 import json
 import os
@@ -179,6 +180,8 @@ class FitNF():
         flux = [obj[2] for obj in outputs]
         flux_err = [obj[3] for obj in outputs]
         flux_err_pred = [obj[4] for obj in outputs]
+        flux_pred_metrics = [obj[5] for obj in outputs]
+        flux_err_pred_metrics = [obj[6] for obj in outputs]
 
         for object in objects:
             # print(object)
@@ -192,6 +195,8 @@ class FitNF():
         flux = np.array(flux)
         flux_err = np.array(flux_err)
         flux_err_pred = np.array(flux_err_pred)
+        flux_pred_metrics = np.array(flux_pred_metrics)
+        flux_err_pred_metrics = np.array(flux_err_pred_metrics)
         
         # print(flux)
         # print(flux_err)
@@ -211,6 +216,8 @@ class FitNF():
         self.flux = flux
         self.flux_err = flux_err
         self.flux_err_pred = flux_err_pred
+        self.flux_pred_metrics = flux_pred_metrics
+        self.flux_err_pred_metrics = flux_err_pred_metrics
         
         for obj in flux_pred:
             mid = int(len(obj)/2)
@@ -267,7 +274,7 @@ class FitNF():
         NF = NormalizingFlowsBase(num_layers = 8)
         
         optimizer = torch.optim.Adam(NF.parameters(), self.lr) 
-        
+        untransformed_X = X
         X = StandardScaler().fit_transform(X)
         X = torch.from_numpy(X).to(torch.float32)
         y_transform = StandardScaler()
@@ -298,6 +305,20 @@ class FitNF():
         """
         # print("\nSampling...\n")
         X_pred, aug_timestamps = augmentation(timestamps=timestamp, num_timestamps = self.num_ts)
+        flux_pred_metrics = []
+        flux_err_pred_metrics = []
+        num_datapoints = len(X)
+        for i in range(num_datapoints):          
+            flux_approx = []
+            for j in range(self.num_samples):
+                flux_approx.append(y_transform.inverse_transform(np.expand_dims(NF.sample_data(X[i]).detach().numpy(), axis=0))[0][0])
+            flux_approx = np.array(flux_approx)
+            mean_flux = sum(flux_approx)/len(flux_approx) # flux_approx.std(axis=0)
+            std_flux = flux_approx.std(axis=0)
+            flux_pred_metrics.append(mean_flux)
+            flux_err_pred_metrics.append(std_flux)
+            # if (i+1)%32 == 0:
+            #    print("For datapoint {0}, predicted flux is : {1}, [{2}/{3}]".format(untransformed_X[i],flux_pred_metrics[i], i+1, num_datapoints))
         if (X_pred!=None):
             X = StandardScaler().fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
@@ -316,14 +337,14 @@ class FitNF():
             # if (i+1)%32 == 0:
             #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], flux_pred[i], i+1))
 
-        df_obj_pb_0 = df_obj
-        df_obj_pb_1 = df_obj
-        df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
-        df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
-        pb0_t = df_obj_pb_0['mjd']
-        pb0_flux = df_obj_pb_0['flux']
-        pb1_t = df_obj_pb_1['mjd']
-        pb1_flux = df_obj_pb_1['flux']
+        # df_obj_pb_0 = df_obj
+        # df_obj_pb_1 = df_obj
+        # df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
+        # df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
+        # pb0_t = df_obj_pb_0['mjd']
+        # pb0_flux = df_obj_pb_0['flux']
+        # pb1_t = df_obj_pb_1['mjd']
+        # pb1_flux = df_obj_pb_1['flux']
         # plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
         # plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
 
@@ -338,13 +359,17 @@ class FitNF():
         # # num = np.random.randint(-1000,1000)
         # plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
         # plt.clf()
-
+    
+        passband2name = {0: 'g', 1: 'r'}
+        plotLightCurve(obj_name, df_obj, flux_pred, aug_timestamps, passband2name)
         output = []
         output.append(flux_pred)
         output.append(list(aug_timestamps))
         output.append(flux)
         output.append(flux_err)
         output.append(flux_err_pred)
+        output.append(flux_pred_metrics)
+        output.append(flux_err_pred_metrics)
         
         # print("Predicted object " + obj_name)
         original_stdout = sys.stdout

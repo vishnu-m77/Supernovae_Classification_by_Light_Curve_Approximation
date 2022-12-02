@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 from src.CNN import classification as CNN
 import src.normalizing_flows as NF
 import src.metrics as met
-import sys
+import CNNMetrics
+from matplotlib.backends.backend_pdf import PdfPages
+
 
 
 if __name__ == '__main__':
@@ -31,14 +33,16 @@ if __name__ == '__main__':
 
     nf_params = param["NF"]
     data_dir = 'data/ANTARES_NEW.csv'
-    # nf = NF.FitNF(data_dir, nf_params)
-    
-    # flux_pred = nf.flux_pred
-    # flux_err = nf.flux_err
-    # flux = nf.flux
-    # flux_err_pred = nf.flux_err_pred
-    # metrics = met.regression_quality_metrics_report(flux, flux_pred, flux_err, flux_err_pred)
-    # print(metrics)
+    nf = NF.FitNF(data_dir, nf_params)
+    flux_pred = nf.flux_pred
+    flux_err = nf.flux_err
+    flux = nf.flux
+    flux_err_pred = nf.flux_err_pred
+    flux_pred_metrics = nf.flux_pred_metrics
+    flux_err_pred_metrics = nf.flux_err_pred_metrics
+    #metrics = met.regression_quality_metrics_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    met.generate_NF_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    #print(metrics)
     
     # flux_pred = np.array(flux_pred)
     # flux_pred = torch.from_numpy(np.array(flux_pred))
@@ -60,8 +64,22 @@ if __name__ == '__main__':
     lbl_file = "data\y_test.json"
 
     cnn_params = param["CNN"]
-    nf = 1
-    CNN(directory, img_file, lbl_file, cnn_params, nf)
+    # nf = 1
+    
+    y_test, y_test_pred = CNN(directory, img_file, lbl_file, cnn_params, nf)
+    report = CNNMetrics.gen_report(y_test, y_test_pred)
+
+    print(report)
+
+    fig , ax = plt.subplots(figsize=(5, 7))
+    ax.axis('tight')
+    ax.axis('off')
+    the_table = ax.table(cellText=report.values, colLabels=report.columns, loc = 'center')
+
+    pp = PdfPages("Metrics.pdf")
+    pp.savefig(fig, bbox_inches='tight')
+    pp.close()
+
     # Regression and Performance metrics
     # Visualization and Report
     
