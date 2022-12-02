@@ -129,12 +129,6 @@ def regression_quality_metrics_report(flux, flux_pred, flux_err=None, flux_err_p
     flux = np.array(flux)
     flux_pred = np.array(flux_pred)
     
-    print(flux)
-    print(flux_pred)
-    print(len(flux))
-    print(len(flux_pred))
-    print(len(flux_pred[0]))
-    
     rmse  = np.sqrt( mean_squared_error(flux, flux_pred) )
     mae   = mean_absolute_error(flux, flux_pred)
     
@@ -154,3 +148,27 @@ def regression_quality_metrics_report(flux, flux_pred, flux_err=None, flux_err_p
     
     else:
         return [rmse, mae, rse, rae, mape]
+
+def append_to_list(lst_arr, elem_arr):
+    for i in range(len(lst_arr)):
+        lst_arr[i].append(elem_arr[i])
+    return lst_arr
+
+def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
+    num_objects = len(flux)
+    rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr = [],[],[],[],[]
+    nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr = [],[],[],[],[]
+    #flux_err = np.array(flux_err)
+    metrics_array = [rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr, nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr]
+    # metrics_array = [rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr]
+    for i in range(num_objects):
+        nf_metric_elems = regression_quality_metrics_report(flux[i], flux_pred[i], flux_err[i], np.array(flux_err_pred[i]))
+        metrics_array = append_to_list(metrics_array, nf_metric_elems)
+    mean_metrics_summary = []
+    std_metrics_summary = []
+    for i in range(len(metrics_array)):
+        mean_metrics_summary.append(np.array(metrics_array[i]).mean())
+        std_metrics_summary.append(np.array(metrics_array[i]).std())
+        print("Metric {0} has mean {1} and standard deviation {2}".format(i+1, mean_metrics_summary[i], std_metrics_summary[i]))
+
+            

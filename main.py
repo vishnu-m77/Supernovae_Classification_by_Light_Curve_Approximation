@@ -32,12 +32,15 @@ if __name__ == '__main__':
     nf_params = param["NF"]
     data_dir = 'data/ANTARES_NEW.csv'
     nf = NF.FitNF(data_dir, nf_params)
-    # flux_pred = nf.flux_pred
-    # flux_err = nf.flux_err
-    # flux = nf.flux
-    # flux_err_pred = nf.flux_err_pred
-    # metrics = met.regression_quality_metrics_report(flux, flux_pred, flux_err, flux_err_pred)
-    # print(metrics)
+    flux_pred = nf.flux_pred
+    flux_err = nf.flux_err
+    flux = nf.flux
+    flux_err_pred = nf.flux_err_pred
+    flux_pred_metrics = nf.flux_pred_metrics
+    flux_err_pred_metrics = nf.flux_err_pred_metrics
+    #metrics = met.regression_quality_metrics_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    met.generate_NF_report(flux, flux_pred_metrics, flux_err, flux_err_pred_metrics)
+    #print(metrics)
     
     # flux_pred = np.array(flux_pred)
     # flux_pred = torch.from_numpy(np.array(flux_pred))
@@ -60,7 +63,7 @@ if __name__ == '__main__':
 
     cnn_params = param["CNN"]
     # nf = 1
-    CNN(directory, img_file, lbl_file, cnn_params, nf)
+    #CNN(directory, img_file, lbl_file, cnn_params, nf)
     # Regression and Performance metrics
     # Visualization and Report
     
