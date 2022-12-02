@@ -15,7 +15,7 @@ import sys
 utility functions
 """
 
-def mask_inputs(nn_input, layer):
+def mask_inputs(layer):
     """
     This is used to mask variables in the flow. When layer is even,
     variables of the normalizing flow are masked by [0.,1.] and when
@@ -77,7 +77,7 @@ class RealNVPtransforms(Net):
         Forward transform of flux data y = [flux,flux_err] to latent z conditioned on x = [time_stamp, passband]
         """
         nn_input = torch.cat((y,x),dim=1)
-        nn_mask_mat, var_mask, mask_prime = mask_inputs(nn_input, layer)
+        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer)
         nn_masked_input = torch.matmul(nn_input, nn_mask_mat)
         s_forward = self.s.forward(nn_masked_input)
         t_forward = self.t.forward(nn_masked_input)
@@ -90,7 +90,7 @@ class RealNVPtransforms(Net):
         Inverse transform of latent z to flux data y = [flux,flux_err] conditioned on x = [time_stamp, passband]
         """
         nn_input = torch.cat((z,x), dim=0)
-        nn_mask_mat, var_mask, mask_prime = mask_inputs(nn_input, layer)
+        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer)
         #x_backward = (z-self.t.forward(nn_masked_input))df = pd.read_csv(data_dir) # define pandas datadrame for while data*torch.exp(-self.s.forward(nn_masked_input))*mask_prime+z_masked
         nn_masked_input = torch.matmul(nn_input, nn_mask_mat)
         s_forward = self.s.forward(nn_masked_input)
