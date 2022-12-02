@@ -1,6 +1,6 @@
 {
     "NF":{
-        "num_objects": 100,
+        "num_objects": 600,
         "num_samples": 500,
         "lr": 0.00075,
         "num_epochs": 8000,
