@@ -211,6 +211,6 @@ def classification(directory, img_file, lbl_file, param, nf):
     
     y_test_pred = np.array(y_test_pred)
     y_test_pred_list = y_test_pred.tolist()
-    with open(directory + "/y_test_pred.json", 'w') as f:
-        json.dump(y_test_pred_list, f)
+    #with open(directory + "/y_test_pred.json", 'w') as f:
+        #json.dump(y_test_pred_list, f)
     return y_test, y_test_pred

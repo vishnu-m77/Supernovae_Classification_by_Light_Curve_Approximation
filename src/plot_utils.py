@@ -32,6 +32,8 @@ def plot_light_curves(anobject, predDf, passband2name, filesavepath, title=''):
     plt.legend()
     plt.title(title)
     plt.savefig(filesavepath)
+    plt.clf()   # Clear figure
+    plt.close() # Close a figure window
 
 def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title=''):
     '''
