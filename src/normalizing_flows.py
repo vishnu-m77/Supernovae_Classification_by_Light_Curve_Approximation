@@ -4,7 +4,6 @@ import numpy as np
 from torch import nn
 import pandas as pd
 from sklearn.preprocessing import StandardScaler
-from src.plot_utils import plotLightCurve
 import matplotlib.pyplot as plt
 import json
 import os
@@ -234,6 +233,9 @@ class FitNF():
         self.y_test = y_test
         self.flux_pred = flux_pred
         self.aug_timestamps = aug_timestamps
+
+        self.df = df
+        self.objects = objects
     
     def one_object_pred(self, df_obj, obj_name):
         timestamp = np.asarray(df_obj['mjd']) # timestamp
@@ -324,8 +326,6 @@ class FitNF():
             # if (i+1)%32 == 0:
             #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], flux_pred[i], i+1))
     
-        passband2name = {0: 'g', 1: 'r'}
-        plotLightCurve(obj_name, df_obj, flux_pred, aug_timestamps, passband2name)
         output = []
         output.append(flux_pred)
         output.append(list(aug_timestamps))
