@@ -34,8 +34,8 @@ def run_CNN(cnn_params, report_file, nf = 0, run_nf = 0):
         
     else:
         
-        X_file = os.path.join("src", "X_matrix.json")
-        y_file = os.path.join("src", "y_vector.json")
+        X_file = os.path.join("data", "images.json")
+        y_file = os.path.join("data", "labels.json")
         with open(X_file, 'r') as f:
             X_matrix = json.load(f)
         with open(y_file, 'r') as f:
@@ -71,6 +71,9 @@ if __name__ == '__main__':
     
     args = parser.parse_args()
     num_objects = args.nf
+    if (num_objects != 0 and num_objects < 10):
+        print("Number of objects for NF must be at least 10")
+        sys.exit(0)
     verbose = args.verbose
     plot = args.plot
     
