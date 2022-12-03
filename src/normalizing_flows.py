@@ -339,11 +339,7 @@ class FitNF():
             std_flux = flux_approx.std(axis=0)
             flux_pred.append(mean_flux)
             flux_err_pred.append(std_flux)
-            # if (i+1)%32 == 0:
-            #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], flux_pred[i], i+1))
-    
-        # passband2name = {0: 'g', 1: 'r'}
-        # plotLightCurve(obj_name, df_obj, flux_pred, aug_timestamps, passband2name)
+
         output = [] # return an output object containing variables needed from normalizing flows for metrics and augmentation
         output.append(flux_pred)
         output.append(list(aug_timestamps))

@@ -99,10 +99,6 @@ if __name__ == '__main__':
 
         # Run Normalizing Flows to obtain the approximate light curve
         nf = NF.FitNF(data_dir, num_objects, nf_params, report_file, verbose)
-        
-        # Not sure why we are saving these values , remove in main
-        # flux_pred = nf.flux_pred
-        # flux_err_pred = nf.flux_err_pred
 
         metrics = nf_met.generate_NF_report(nf.flux, nf.flux_pred_metrics, nf.flux_err, nf.flux_err_pred_metrics)
         metrics.to_csv('nfmetrics.csv')
@@ -117,4 +113,3 @@ if __name__ == '__main__':
             plots(nf)
             
         run_CNN(cnn_params, report_file, nf, run_nf = 1)
-        print("Hello")

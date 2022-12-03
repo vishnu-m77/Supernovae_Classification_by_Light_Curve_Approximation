@@ -155,8 +155,7 @@ def append_to_list(lst_arr, elem_arr):
         lst_arr[i].append(elem_arr[i])
     return lst_arr
 
-def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None, v=1):
-    # if v: print() # v is for verbosity
+def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
     num_objects = len(flux)
     rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr = [],[],[],[],[]
     nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr = [],[],[],[],[]

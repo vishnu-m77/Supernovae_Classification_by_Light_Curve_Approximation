@@ -53,21 +53,6 @@ def classification(param, X_matrix, y_vector, report_file):
     lr = param["lr"]
     weight_decay = param["weight_decay"]
     
-    #reading images and labels
-    # img_file = os.path.join(directory, "data/images.json")
-    # lbl_file = os.path.join(directory, "data/labels.json")
-    
-    #type conversion to numpy arrays
-    # X_matrix = np.array(X_matrix) 
-    # y_vector = np.array(y_vector)
-    # print(X_matrix)
-    # print(y_vector)
-    # print(X_matrix.shape, y_vector.shape)
-
-    # normalize input data
-    # X_matrix = np.array((X_matrix - X_matrix.mean()) / X_matrix.std(), dtype = np.float32)
-    # print(X_matrix.size)
-   
     # Defining train and test size
 
     train_size = int(0.6*len(X_matrix))
@@ -121,10 +106,7 @@ def classification(param, X_matrix, y_vector, report_file):
             # get the inputs; info is a list of [inputs, labels]
             inputs = X_train[i]
             inputs = inputs[None, :]
-            # print(inputs.shape)
             labels = y_train[i]
-            # print(labels)
-            # print(labels.shape)
             labels = labels[None]
 
             # zero the parameter gradients
@@ -132,15 +114,11 @@ def classification(param, X_matrix, y_vector, report_file):
                 param.grad = None
 
             # forward + backward + optimize
-            #print(inputs.size())bootstrap_estimate_mean_stddev
-            # print(net(inputs).size())
-            outputs = net(inputs).reshape(1)#(61)
-            # print(outputs.size())
-            # print(labels.size())
+            outputs = net(inputs).reshape(1)
+            
             outputs = outputs.type(torch.float32)
             labels = labels.type(torch.float32)
             loss = criterion(outputs, labels)
-            #optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
@@ -148,7 +126,7 @@ def classification(param, X_matrix, y_vector, report_file):
 
         # print mean loss for the epoch
         cur_loss = epoch_loss / X_train.shape[0]
-        # plt.plot(epoch, cur_loss, '.', color='red')
+        
         if (epoch + 1) % display_epochs == 0:
             print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
             original_stdout = sys.stdout
@@ -174,53 +152,15 @@ def classification(param, X_matrix, y_vector, report_file):
 
             epoch_loss_val += loss.item()
 
-        cur_loss_val = epoch_loss_val / X_val.shape[0]
-        # plt.plot(epoch, cur_loss_val, '.', color='blue')
-
         if epoch_loss_val <= best_loss_val:
             best_loss_val = epoch_loss_val
             best_state_on_val = deepcopy(net.state_dict())
 
-    # plt.legend(['train_loss', 'val_loss'])        
-    # plt.show()
-
     net.load_state_dict(best_state_on_val)
     
     print('Finished Training CNN')
-    # X_test = nf.X_test
-    # y_test = nf.y_test
-    # img_file = os.path.join(directory, "X_test.json")
-    # lbl_file = os.path.join(directory, "y_test.json")
-    
-    # with open(img_file, 'r') as f:
-    #     X_test = json.load(f)
-    # with open(lbl_file, 'r') as f:
-    #     y_test = json.load(f)
-        
-    # X_test = np.array(X_test)
-    # y_test = np.array(y_test)
-        
-    # X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
-    
-    # X_test = torch.from_numpy(np.array(X_test))
-    
-    # y_test = torch.from_numpy(np.array(y_test))
-    # print(X_test)
-    
-    # print(y_test)
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     y_test_pred = np.array(y_test_pred)
-    # print(y_test_pred)
     
-    # original_stdout = sys.stdout
-    # with open(report_file, 'a') as f:
-    #     sys.stdout = f
-    #     print(y_test)
-    #     print(y_test_pred)
-    #     sys.stdout = original_stdout
-    
-    # y_test_pred_list = y_test_pred.tolist()
-    #with open(directory + "/y_test_pred.json", 'w') as f:
-        #json.dump(y_test_pred_list, f)
     return y_test, y_test_pred
