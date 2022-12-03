@@ -8,20 +8,22 @@ import torch.nn as nn
 import torch.optim as optim
 from copy import deepcopy
 import os
-from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score
+from  sklearn.metrics import accuracy_score, roc_auc_score, log_loss, precision_recall_curve, auc, recall_score, precision_score, mean_squared_error, mean_absolute_error, mean_absolute_percentage_error
 from sklearn.utils import resample
 import json
+import sys
 
 warnings.filterwarnings('ignore')
 
-class Net(nn.Module):
+class Net(nn.Module): 
     def __init__(self):
-        super(Net, self).__init__()
-        self.cnn = nn.Sequential(
-                                    nn.Conv1d(2, 8, 3, padding=1),
-                                    nn.LayerNorm((8, 256)),
-                                    nn.ReLU(),
-                                    nn.MaxPool1d(2),
+        super(Net, self).__init__() 
+        #Defining CNN sequential model
+        self.cnn = nn.Sequential( 
+                                    nn.Conv1d(2, 8, 3, padding=1), # 1D convolution 
+                                    nn.LayerNorm((8, 256)), #Normalisation layer
+                                    nn.ReLU(), # Using Relu Activation
+                                    nn.MaxPool1d(2), #Applying Max pooling
                                     nn.Conv1d(8, 16, 3, padding=1),
                                     nn.LayerNorm((16, 128)),
                                     nn.ReLU(),
@@ -36,52 +38,54 @@ class Net(nn.Module):
                                     nn.Sigmoid()
                                 )
 
-    def forward(self, x):
+    def forward(self, x): 
         x = self.cnn(x)
         return x
 
-def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
-    
-    metrics = []
-    inds = np.arange(len(y_test))
-    for i in range(n_iters):
-        inds_boot = resample(inds)
-        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
-        accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
-        pr_auc = auc(recall, precision)
-        recall = recall_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        precision = precision_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
-        metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
-    metrics = np.array(metrics)
-    report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'], 
-                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
-                          index=['mean', 'std'])
-    return report
 
-def classification(directory, img_file, lbl_file, param, nf):
+def classification(directory, img_file, lbl_file, param, nf, v = 1):
+    '''
+    Params:
+    directory: Path of images and labels
+    img_file: Name of the image file
+    lbl_file: Name of label file
+    param: hyperparameters for model training
+    '''
     all_data = []
     all_target_classes = []
     n_epochs = param["n_epochs"]
     display_epochs = param["display_epochs"]
-
-    with open(directory + img_file, 'r') as f:
+    lr = param["lr"]
+    weight_decay = param["weight_decay"]
+    
+    img_file = os.path.join(directory, "X_test.json")
+    lbl_file = os.path.join(directory, "y_test.json")
+    
+    #reading images and labels
+    # img_file = os.path.join(directory, "data/images.json")
+    # lbl_file = os.path.join(directory, "data/labels.json")
+    
+    with open(img_file, 'r') as f:
         all_data = json.load(f)
-    with open(directory + lbl_file, 'r') as f:
+    with open(lbl_file, 'r') as f:
         all_target_classes = json.load(f)
     
-    all_data = np.array(all_data)
+    #type conversion to numpy arrays
+    all_data = np.array(all_data) 
     all_target_classes = np.array(all_target_classes)
+    print(all_data)
+    print(all_target_classes)
     # print(all_data.shape, all_target_classes.shape)
 
     # normalize input data
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
     # print(all_data.size)
+   
+    # Defining train and test size
 
-    train_size = int(0.7*len(all_data))
-    val_size = int(0.3*len(all_data))
-    # test_size = int(0.2*len(all_data))
+    train_size = int(0.6*len(all_data))
+    val_size = int(0.2*len(all_data))
+    test_size = int(0.2*len(all_data))
     
     X_train = []
     y_train = []
@@ -90,6 +94,7 @@ def classification(directory, img_file, lbl_file, param, nf):
         X_train.append(all_data[i])
         y_train.append(all_target_classes[i])
     
+    #Converting to torch tensors
     X_train = torch.from_numpy(np.array(X_train))
     y_train = torch.from_numpy(np.array(y_train))
     
@@ -102,23 +107,26 @@ def classification(directory, img_file, lbl_file, param, nf):
     X_val = torch.from_numpy(np.array(X_val))
     y_val = torch.from_numpy(np.array(y_val))
     
-    # X_test = []
-    # y_test = []
-    # for i in range(train_size + val_size, train_size + val_size + test_size):
-    #     X_test.append(all_data[i])
-    #     y_test.append(all_target_classes[i])
-    
-    # X_test = torch.from_numpy(np.array(X_test))
-    # y_test = torch.from_numpy(np.array(y_test))
+    X_test = []
+    y_test = []
+    for i in range(train_size + val_size, train_size + val_size + test_size):
+        X_test.append(all_data[i])
+        y_test.append(all_target_classes[i])
+   
+    #defining model metrics and optimiser
+    X_test = torch.from_numpy(np.array(X_test))
+    y_test = torch.from_numpy(np.array(y_test))
     
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
-    optimizer = optim.Adam(net.parameters(), lr=0.0002, weight_decay=0.001)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
+    optimizer = optim.Adam(net.parameters(), lr = lr, weight_decay = weight_decay)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)
     epochs = np.arange(n_epochs)
 
     best_loss_val = float('inf')
     best_state_on_val = None
-
+    
+    # Training the model 
+    
     for epoch in list(epochs):  # loop over the dataset multiple times
         epoch_loss = 0.0
         net.train()
@@ -156,7 +164,12 @@ def classification(directory, img_file, lbl_file, param, nf):
         # plt.plot(epoch, cur_loss, '.', color='red')
         if (epoch + 1) % display_epochs == 0:
             print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
-
+            original_stdout = sys.stdout
+            with open('out.txt', 'a') as f:
+                sys.stdout = f
+                print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
+                sys.stdout = original_stdout
+        #model evaluation
         net.eval()
         epoch_loss_val = 0.0
         for i in range(val_size):
@@ -187,13 +200,39 @@ def classification(directory, img_file, lbl_file, param, nf):
     net.load_state_dict(best_state_on_val)
     
     print('Finished Training')
-    X_test = nf.X_test
-    y_test = nf.y_test
-    print(X_test)
+    # X_test = nf.X_test
+    # y_test = nf.y_test
+    # img_file = os.path.join(directory, "X_test.json")
+    # lbl_file = os.path.join(directory, "y_test.json")
+    
+    # with open(img_file, 'r') as f:
+    #     X_test = json.load(f)
+    # with open(lbl_file, 'r') as f:
+    #     y_test = json.load(f)
+        
+    X_test = np.array(X_test)
+    y_test = np.array(y_test)
+        
+    X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
+    
+    X_test = torch.from_numpy(np.array(X_test))
+    
+    y_test = torch.from_numpy(np.array(y_test))
+    # print(X_test)
+    
     print(y_test)
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
     print(y_test_pred)
+    original_stdout = sys.stdout
+    with open('out.txt', 'a') as f:
+        sys.stdout = f
+        print(y_test)
+        print(y_test_pred)
+        sys.stdout = original_stdout
     
-    # report = gen_report(y_test, y_test_pred)
-    # print(report)
+    y_test_pred = np.array(y_test_pred)
+    y_test_pred_list = y_test_pred.tolist()
+    #with open(directory + "/y_test_pred.json", 'w') as f:
+        #json.dump(y_test_pred_list, f)
+    return y_test, y_test_pred

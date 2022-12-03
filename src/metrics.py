@@ -1,0 +1,186 @@
+import numpy as np
+import pandas as pd
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_squared_log_error
+from scipy import stats
+import sys
+
+
+def nlpd_metric(flux, flux_pred, flux_err_pred):
+    """
+    The Negative Log Predictive Density (NLPD) metric calculation.
+    Source: http://mlg.eng.cam.ac.uk/pub/pdf/QuiRasSinetal06.pdf
+    
+    Parameters:
+    -----------
+    flux : array-like
+        Flux of the light curve observations.
+    flux_pred : array-like
+        Flux of the light curve observations, approximated by the augmentation model.
+    flux_err_pred : array-like
+        Flux errors of the light curve observations, estimated by the augmentation model.
+        
+    Returns:
+    --------
+    metric : float
+        NLPD metrc value.
+    """
+    
+    metric = (flux - flux_pred)**2 / (2 * flux_err_pred**2) + np.log(flux_err_pred) + 0.5 * np.log(2 * np.pi)
+    
+    return metric.mean()
+
+
+def nrmse_o_metric(flux, flux_pred, flux_err):
+    """
+    The normalized Root Mean Squared Error (nRMSEo) metric based on observed error. 
+    Source: http://mlg.eng.cam.ac.uk/pub/pdf/QuiRasSinetal06.pdf
+    
+    Parameters:
+    -----------
+    flux : array-like
+        Flux of the light curve observations.
+    flux_pred : array-like
+        Flux of the light curve observations, approximated by the augmentation model.
+    flux_err : array-like
+            Flux errors of the light curve observations.
+        
+    Returns:
+    --------
+    metric : float
+        nRMSEo metrc value.
+    """
+    
+    metric = (flux - flux_pred)**2 / flux_err**2
+    
+    return np.sqrt(metric.mean())
+
+
+def nrmse_p_metric(flux, flux_pred, flux_err_pred):
+    """
+    The normalized Root Mean Squared Error (nRMSEp) metric based on predicted error. 
+    Source: http://mlg.eng.cam.ac.uk/pub/pdf/QuiRasSinetal06.pdf
+    
+    Parameters:
+    -----------
+    flux : array-like
+        Flux of the light curve observations.
+    flux_pred : array-like
+        Flux of the light curve observations, approximated by the augmentation model.
+    flux_err_pred : array-like
+        Flux errors of the light curve observations, estimated by the augmentation model.
+        
+    Returns:
+    --------
+    metric : float
+        nRMSEp metrc value.
+    """
+    
+    metric = (flux - flux_pred)**2 / flux_err_pred**2
+    
+    return np.sqrt(metric.mean())
+
+
+def picp_metric(flux, flux_pred, flux_err_pred, alpha=0.90):
+    """
+    The Prediction Interval Coverage Probability (PICP) metric. 
+    Source: https://www.sciencedirect.com/science/article/pii/S0893608006000153?via%3Dihub
+    
+    Parameters:
+    -----------
+    flux : array-like
+        Flux of the light curve observations.
+    flux_pred : array-like
+        Flux of the light curve observations, approximated by the augmentation model.
+    flux_err_pred : array-like
+        Flux errors of the light curve observations, estimated by the augmentation model.
+    alpha : float [0, 1]
+        Fraction of the distribution inside confident intervals.
+        
+    Returns:
+    --------
+    metric : float
+        PICP metrc value.
+    """
+    
+    p_left, p_right = stats.norm.interval(alpha=alpha, loc=flux_pred, scale=flux_err_pred)
+    metric = (flux > p_left) * (flux <= p_right)
+    
+    return metric.mean()
+
+
+
+def regression_quality_metrics_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
+    """
+    Parameters:
+    -----------
+    flux : array-like
+        Flux of the light curve observations.
+    flux_pred : array-like
+        Flux of the light curve observations, approximated by the augmentation model.
+    flux_err : array-like
+            Flux errors of the light curve observations.
+    flux_err_pred : array-like
+        Flux errors of the light curve observations, estimated by the augmentation model.
+        
+    Returns
+    -------
+    List of metric values: [rmse, mae, rse, rae, mape, rmsle, nlpd, nrmse, picp]
+    """
+    
+    flux = np.array(flux)
+    flux_pred = np.array(flux_pred)
+    
+    rmse  = np.sqrt( mean_squared_error(flux, flux_pred) )
+    mae   = mean_absolute_error(flux, flux_pred)
+    
+    rse  = np.sqrt( ( (flux - flux_pred)**2 ).sum() / ( (flux - flux.mean())**2 ).sum() )
+    rae  = np.abs( flux - flux_pred ).sum() / np.abs( flux - flux.mean() ).sum()
+    mape = 100. / len(flux) * np.abs( 1. - flux_pred/flux ).sum()
+    
+    if (flux_err is not None) and (flux_err_pred is not None):
+        
+        nlpd  = nlpd_metric(flux, flux_pred, flux_err_pred)
+        nrmseo = nrmse_o_metric(flux, flux_pred, flux_err)
+        nrmsep = nrmse_p_metric(flux, flux_pred, flux_err_pred)
+        picp_68  = picp_metric(flux, flux_pred, flux_err_pred, alpha=0.68268) # 1 sigma
+        picp_95  = picp_metric(flux, flux_pred, flux_err_pred, alpha=0.95450) # 2 sigmas
+    
+        return [rmse, mae, rse, rae, mape, nlpd, nrmseo, nrmsep, picp_68, picp_95]
+    
+    else:
+        return [rmse, mae, rse, rae, mape]
+
+def append_to_list(lst_arr, elem_arr):
+    for i in range(len(lst_arr)):
+        lst_arr[i].append(elem_arr[i])
+    return lst_arr
+
+def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None, v=1):
+    # if v: print() # v is for verbosity
+    num_objects = len(flux)
+    rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr = [],[],[],[],[]
+    nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr = [],[],[],[],[]
+    #flux_err = np.array(flux_err)
+    metrics_array = [rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr, nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr]
+    # metrics_array = [rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr]
+    for i in range(num_objects):
+        nf_metric_elems = regression_quality_metrics_report(flux[i], flux_pred[i], flux_err[i], np.array(flux_err_pred[i]))
+        metrics_array = append_to_list(metrics_array, nf_metric_elems)
+    mean_metrics_summary = []
+    std_metrics_summary = []
+    for i in range(len(metrics_array)):
+        mean_metrics_summary.append(np.array(metrics_array[i]).mean())
+        std_metrics_summary.append(np.array(metrics_array[i]).std())
+        original_stdout = sys.stdout
+        with open('out.txt', 'a') as f:
+            sys.stdout = f
+            print("Metric {0} has mean {1} and standard deviation {2}".format(i+1, mean_metrics_summary[i], std_metrics_summary[i]))
+            sys.stdout = original_stdout
+        print("Metric {0} has mean {1} and standard deviation {2}".format(i+1, mean_metrics_summary[i], std_metrics_summary[i]))
+    
+    report = pd.DataFrame(columns=['rmse_arr', 'mae_arr', 'rse_arr', 'rae_arr', 'mape_arr', 'nlpd_arr', 'nrmseo_arr', 'nrmsep_arr', 'picp_68_arr', 'picp_95_arr'],
+                          data=[mean_metrics_summary, std_metrics_summary], 
+                          index=['mean', 'std'])
+
+    return report
+            
