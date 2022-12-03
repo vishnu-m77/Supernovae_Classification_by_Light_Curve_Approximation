@@ -8,6 +8,9 @@
 - name: Maimouna Sow
 - student ID: 20822614
 
+- name: Sehmimul Hoque
+- student ID: 20814946
+
 ## Install Dependencies
 
 - numpy
