@@ -15,14 +15,15 @@ import sys
 
 warnings.filterwarnings('ignore')
 
-class Net(nn.Module):
+class Net(nn.Module): 
     def __init__(self):
-        super(Net, self).__init__()
-        self.cnn = nn.Sequential(
-                                    nn.Conv1d(2, 8, 3, padding=1),
-                                    nn.LayerNorm((8, 256)),
-                                    nn.ReLU(),
-                                    nn.MaxPool1d(2),
+        super(Net, self).__init__() 
+        #Defining CNN sequential model
+        self.cnn = nn.Sequential( 
+                                    nn.Conv1d(2, 8, 3, padding=1), # 1D convolution 
+                                    nn.LayerNorm((8, 256)), #Normalisation layer
+                                    nn.ReLU(), # Using Relu Activation
+                                    nn.MaxPool1d(2), #Applying Max pooling
                                     nn.Conv1d(8, 16, 3, padding=1),
                                     nn.LayerNorm((16, 128)),
                                     nn.ReLU(),
@@ -37,12 +38,19 @@ class Net(nn.Module):
                                     nn.Sigmoid()
                                 )
 
-    def forward(self, x):
+    def forward(self, x): 
         x = self.cnn(x)
         return x
 
 
 def classification(directory, img_file, lbl_file, param, nf, v = 1):
+    '''
+    Params:
+    directory: Path of images and labels
+    img_file: Name of the image file
+    lbl_file: Name of label file
+    param: hyperparameters for model training
+    '''
     all_data = []
     all_target_classes = []
     n_epochs = param["n_epochs"]
@@ -53,6 +61,7 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     img_file = os.path.join(directory, "X_test.json")
     lbl_file = os.path.join(directory, "y_test.json")
     
+    #reading images and labels
     # img_file = os.path.join(directory, "data/images.json")
     # lbl_file = os.path.join(directory, "data/labels.json")
     
@@ -61,7 +70,8 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     with open(lbl_file, 'r') as f:
         all_target_classes = json.load(f)
     
-    all_data = np.array(all_data)
+    #type conversion to numpy arrays
+    all_data = np.array(all_data) 
     all_target_classes = np.array(all_target_classes)
     print(all_data)
     print(all_target_classes)
@@ -70,6 +80,8 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     # normalize input data
     all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
     # print(all_data.size)
+   
+    # Defining train and test size
 
     train_size = int(0.6*len(all_data))
     val_size = int(0.2*len(all_data))
@@ -82,6 +94,7 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
         X_train.append(all_data[i])
         y_train.append(all_target_classes[i])
     
+    #Converting to torch tensors
     X_train = torch.from_numpy(np.array(X_train))
     y_train = torch.from_numpy(np.array(y_train))
     
@@ -99,7 +112,8 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     for i in range(train_size + val_size, train_size + val_size + test_size):
         X_test.append(all_data[i])
         y_test.append(all_target_classes[i])
-    
+   
+    #defining model metrics and optimiser
     X_test = torch.from_numpy(np.array(X_test))
     y_test = torch.from_numpy(np.array(y_test))
     
@@ -110,7 +124,9 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
 
     best_loss_val = float('inf')
     best_state_on_val = None
-
+    
+    # Training the model 
+    
     for epoch in list(epochs):  # loop over the dataset multiple times
         epoch_loss = 0.0
         net.train()
@@ -153,7 +169,7 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
                 sys.stdout = f
                 print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
                 sys.stdout = original_stdout
-
+        #model evaluation
         net.eval()
         epoch_loss_val = 0.0
         for i in range(val_size):
@@ -217,6 +233,6 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     
     y_test_pred = np.array(y_test_pred)
     y_test_pred_list = y_test_pred.tolist()
-    with open(directory + "/y_test_pred.json", 'w') as f:
-        json.dump(y_test_pred_list, f)
+    #with open(directory + "/y_test_pred.json", 'w') as f:
+        #json.dump(y_test_pred_list, f)
     return y_test, y_test_pred

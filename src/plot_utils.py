@@ -1,20 +1,26 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 
-
-def get_object(data, object_id):
+# extracting rows corresponding to object_id
+def get_object(data, object_id): 
     anobject = data[data.object_id == object_id]
     return anobject
 
+
+# extracting rows corresponding to passband
 def get_passband(anobject, passband):
     light_curve = anobject[anobject.passband == passband]
     return light_curve
 
+    
+# Plotting light curves
 def plot_light_curves(anobject, predDf, passband2name, filesavepath, title=''):
-    anobject = anobject.sort_values('mjd')
-    plt.figure(figsize=(9, 5.5))
+    anobject = anobject.sort_values('mjd') #sorting on basis of MJD(timestamp)
+    plt.figure(figsize=(9, 5.5)) 
+    # running loop for each passband 
     for passband in range(len(passband2name)):
         light_curve = get_passband(anobject, passband)
+        #defining colour and label for passband 0 and 1
         if passband == 0:
           color = 'b'
           label= 'DATA: PB=g' 
@@ -32,6 +38,9 @@ def plot_light_curves(anobject, predDf, passband2name, filesavepath, title=''):
     plt.legend()
     plt.title(title)
     plt.savefig(filesavepath)
+    plt.clf()   # Clear figure
+    plt.close() # Close a figure window
+
 
 def plotLightCurve(object_, data, predFlux, aug_timestamp, passband2name, title=''):
     '''
