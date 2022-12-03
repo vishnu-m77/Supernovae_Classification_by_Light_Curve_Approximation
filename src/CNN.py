@@ -43,56 +43,47 @@ class Net(nn.Module):
         return x
 
 
-def classification(directory, img_file, lbl_file, param, nf, v = 1):
+def classification(param, X_matrix, y_vector, report_file):
     '''
     Params:
-    directory: Path of images and labels
-    img_file: Name of the image file
-    lbl_file: Name of label file
     param: hyperparameters for model training
     '''
-    all_data = []
-    all_target_classes = []
     n_epochs = param["n_epochs"]
     display_epochs = param["display_epochs"]
     lr = param["lr"]
     weight_decay = param["weight_decay"]
     
-    img_file = os.path.join(directory, "X_test.json")
-    lbl_file = os.path.join(directory, "y_test.json")
-    
     #reading images and labels
     # img_file = os.path.join(directory, "data/images.json")
     # lbl_file = os.path.join(directory, "data/labels.json")
     
-    with open(img_file, 'r') as f:
-        all_data = json.load(f)
-    with open(lbl_file, 'r') as f:
-        all_target_classes = json.load(f)
-    
     #type conversion to numpy arrays
-    all_data = np.array(all_data) 
-    all_target_classes = np.array(all_target_classes)
-    print(all_data)
-    print(all_target_classes)
-    # print(all_data.shape, all_target_classes.shape)
+    # X_matrix = np.array(X_matrix) 
+    # y_vector = np.array(y_vector)
+    # print(X_matrix)
+    # print(y_vector)
+    # print(X_matrix.shape, y_vector.shape)
 
     # normalize input data
-    all_data = np.array((all_data - all_data.mean()) / all_data.std(), dtype = np.float32)
-    # print(all_data.size)
+    # X_matrix = np.array((X_matrix - X_matrix.mean()) / X_matrix.std(), dtype = np.float32)
+    # print(X_matrix.size)
    
     # Defining train and test size
 
-    train_size = int(0.6*len(all_data))
-    val_size = int(0.2*len(all_data))
-    test_size = int(0.2*len(all_data))
+    # train_size = int(0.6*len(X_matrix))
+    # val_size = int(0.2*len(X_matrix))
+    # test_size = int(0.2*len(X_matrix))
+    
+    train_size = 1
+    val_size = 1
+    test_size = 1
     
     X_train = []
     y_train = []
     # train / test split data
     for i in range(train_size):
-        X_train.append(all_data[i])
-        y_train.append(all_target_classes[i])
+        X_train.append(X_matrix[i])
+        y_train.append(y_vector[i])
     
     #Converting to torch tensors
     X_train = torch.from_numpy(np.array(X_train))
@@ -101,8 +92,8 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     X_val = []
     y_val = []
     for i in range(train_size, train_size + val_size):
-        X_val.append(all_data[i])
-        y_val.append(all_target_classes[i])
+        X_val.append(X_matrix[i])
+        y_val.append(y_vector[i])
     
     X_val = torch.from_numpy(np.array(X_val))
     y_val = torch.from_numpy(np.array(y_val))
@@ -110,8 +101,8 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     X_test = []
     y_test = []
     for i in range(train_size + val_size, train_size + val_size + test_size):
-        X_test.append(all_data[i])
-        y_test.append(all_target_classes[i])
+        X_test.append(X_matrix[i])
+        y_test.append(y_vector[i])
    
     #defining model metrics and optimiser
     X_test = torch.from_numpy(np.array(X_test))
@@ -165,7 +156,7 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
         if (epoch + 1) % display_epochs == 0:
             print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
             original_stdout = sys.stdout
-            with open('out.txt', 'a') as f:
+            with open(report_file, 'a') as f:
                 sys.stdout = f
                 print('[%5d] loss: %.3f' % (epoch + 1, cur_loss))
                 sys.stdout = original_stdout
@@ -199,7 +190,7 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
 
     net.load_state_dict(best_state_on_val)
     
-    print('Finished Training')
+    print('Finished Training CNN')
     # X_test = nf.X_test
     # y_test = nf.y_test
     # img_file = os.path.join(directory, "X_test.json")
@@ -210,29 +201,30 @@ def classification(directory, img_file, lbl_file, param, nf, v = 1):
     # with open(lbl_file, 'r') as f:
     #     y_test = json.load(f)
         
-    X_test = np.array(X_test)
-    y_test = np.array(y_test)
+    # X_test = np.array(X_test)
+    # y_test = np.array(y_test)
         
-    X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
+    # X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
     
-    X_test = torch.from_numpy(np.array(X_test))
+    # X_test = torch.from_numpy(np.array(X_test))
     
-    y_test = torch.from_numpy(np.array(y_test))
+    # y_test = torch.from_numpy(np.array(y_test))
     # print(X_test)
     
-    print(y_test)
+    # print(y_test)
 
     y_test_pred = net(X_test).detach().numpy()[:, 0]
-    print(y_test_pred)
-    original_stdout = sys.stdout
-    with open('out.txt', 'a') as f:
-        sys.stdout = f
-        print(y_test)
-        print(y_test_pred)
-        sys.stdout = original_stdout
-    
     y_test_pred = np.array(y_test_pred)
-    y_test_pred_list = y_test_pred.tolist()
+    # print(y_test_pred)
+    
+    # original_stdout = sys.stdout
+    # with open(report_file, 'a') as f:
+    #     sys.stdout = f
+    #     print(y_test)
+    #     print(y_test_pred)
+    #     sys.stdout = original_stdout
+    
+    # y_test_pred_list = y_test_pred.tolist()
     #with open(directory + "/y_test_pred.json", 'w') as f:
         #json.dump(y_test_pred_list, f)
     return y_test, y_test_pred

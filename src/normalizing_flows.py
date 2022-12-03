@@ -149,10 +149,8 @@ class FitNF():
     arbitrary objects. It contains one_object_pred fucntion which predicts flux for only 
     one object.
     """
-    def __init__(self, data_dir, param, v = 1):
+    def __init__(self, data_dir, num_objects, param, report_file, verbose = 1):
         super(FitNF, self).__init__()
-        # if v: print() # v is for verbosity
-        num_objects = param["num_objects"]
 
         self.lr = param["lr"]
         self.num_epochs = param["num_epochs"]
@@ -167,14 +165,9 @@ class FitNF():
 
         if num_objects < len(objects):
             objects = objects[:num_objects]
-            
-        directory = os.path.dirname(__file__)
 
         flux_pred = []
         aug_timestamps = []
-
-        X_test = []
-        y_test = []
 
         df.loc[df['obj_type'] == 'SN Ia', 'obj_type'] = 1
         df.loc[df['obj_type'] == 'SN Ia-91T', 'obj_type'] = 1
@@ -184,44 +177,29 @@ class FitNF():
         df.loc[df['obj_type'] == 'SN Ia-CSM', 'obj_type'] = 1
         df.loc[df['obj_type'] != 1, 'obj_type'] = 0
 
-        outputs = Parallel(n_jobs=-1)(delayed(self.one_object_pred)(df.loc[df['object_id'] == object], object) for object in objects)
+        outputs = Parallel(n_jobs=-1)(delayed(self.one_object_pred)(df.loc[df['object_id'] == object], object, report_file, verbose) for object in objects)
 
         flux_pred = [obj[0] for obj in outputs]
-        # print("PRED FLUXES:")
-        # print(flux_pred)
         aug_timestamps = [obj[1] for obj in outputs]
         flux = [obj[2] for obj in outputs]
         flux_err = [obj[3] for obj in outputs]
         flux_err_pred = [obj[4] for obj in outputs]
         flux_pred_metrics = [obj[5] for obj in outputs]
         flux_err_pred_metrics = [obj[6] for obj in outputs]
+        
+        X_matrix = []
+        y_vector = []
 
         for object in objects:
-            # print(object)
             df_obj = df.loc[df['object_id'] == object] # select data for object=object_name
             true_value = int(df_obj['obj_type'].to_numpy()[0])
-            y_test.append(true_value)
+            y_vector.append(true_value)
         
         flux = np.array(flux)
         flux_err = np.array(flux_err)
         flux_err_pred = np.array(flux_err_pred)
         flux_pred_metrics = np.array(flux_pred_metrics)
         flux_err_pred_metrics = np.array(flux_err_pred_metrics)
-        
-        # print(flux)
-        # print(flux_err)
-        
-        # flux_list = flux.tolist()
-        # flux_err_list = flux_err.tolist()
-        
-        # print(flux.shape[0])
-        # print(flux_err.shape[0])
-        
-        # with open(directory + "/flux.json", 'w') as f:
-        #     json.dump(flux_list, f)
-        
-        # with open(directory + "/flux_err.json", 'w') as f:
-        #     json.dump(flux_err_list, f)
             
         self.flux = flux
         self.flux_err = flux_err
@@ -234,34 +212,33 @@ class FitNF():
             temp = []
             temp.append(obj[:mid])
             temp.append(obj[mid: ])
-            X_test.append(temp)
-        X_test = np.array(X_test)
-        # print("X_TEST")
-        # print(X_test)
-        y_test = np.array(y_test)
+            X_matrix.append(temp)
+        X_matrix = np.array(X_matrix)
+        y_vector = np.array(y_vector)
         
-        X_test_list = X_test.tolist()
-        y_test_list = y_test.tolist()
+        X_matrix_list = X_matrix.tolist()
+        y_vector_list = y_vector.tolist()
         
-        with open(directory + "/../X_test.json", 'w') as f:
-            json.dump(X_test_list, f)
+        directory = os.path.dirname(__file__)
+        with open(os.path.join(directory, "X_matrix.json"), 'w') as f:
+            json.dump(X_matrix_list, f)
         
-        with open(directory + "/../y_test.json", 'w') as f:
-            json.dump(y_test_list, f)
+        with open(os.path.join(directory, "y_vector.json"), 'w') as f:
+            json.dump(y_vector_list, f)
 
-        X_test = np.array((X_test - X_test.mean()) / X_test.std(), dtype = np.float32)
-        X_test = torch.from_numpy(np.array(X_test)).to(torch.float32)
-        y_test = torch.from_numpy(np.array(y_test)).to(torch.float32)
+        X_matrix = np.array((X_matrix - X_matrix.mean()) / X_matrix.std(), dtype = np.float32)
+        X_matrix = torch.from_numpy(np.array(X_matrix)).to(torch.float32)
+        y_vector = torch.from_numpy(np.array(y_vector)).to(torch.float32)
         
-        self.X_test = X_test
-        self.y_test = y_test
+        self.X_matrix = X_matrix
+        self.y_vector = y_vector
         self.flux_pred = flux_pred
         self.aug_timestamps = aug_timestamps
 
         self.df = df
         self.objects = objects
     
-    def one_object_pred(self, df_obj, obj_name):
+    def one_object_pred(self, df_obj, obj_name, report_file, verbose):
         timestamp = np.asarray(df_obj['mjd']) # timestamp
         passbands = np.asarray(df_obj['passband']) # passband
         # process passband to log(wavelength) [wavelegnth_arr]. This is processed passband
@@ -303,8 +280,8 @@ class FitNF():
             loss.backward()
             optimizer.step() 
             loss_vals.append(float(loss))
-            # if ((epoch+1) % self.display_epochs == 0): 
-        print ('Train Loss : {:.4f}'.format(loss))
+            if ((epoch+1) % self.display_epochs == 0 and verbose):
+                print ('Train Loss : {:.4f} for object {}'.format(loss, obj_name))
         
         # prediction
         # In the augmentation(...) function below, we augment the timestamps for each passband
@@ -376,10 +353,11 @@ class FitNF():
         output.append(flux_pred_metrics)
         output.append(flux_err_pred_metrics)
         
-        # print("Predicted object " + obj_name)
+        if verbose:
+            print("Predicted object " + obj_name)
         original_stdout = sys.stdout
         
-        with open('out.txt', 'a') as f:
+        with open(report_file, 'a') as f:
             sys.stdout = f
             print("Predicted object " + obj_name)
             sys.stdout = original_stdout
