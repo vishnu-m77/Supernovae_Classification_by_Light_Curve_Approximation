@@ -70,13 +70,9 @@ def classification(param, X_matrix, y_vector, report_file):
    
     # Defining train and test size
 
-    # train_size = int(0.6*len(X_matrix))
-    # val_size = int(0.2*len(X_matrix))
-    # test_size = int(0.2*len(X_matrix))
-    
-    train_size = 1
-    val_size = 1
-    test_size = 1
+    train_size = int(0.6*len(X_matrix))
+    val_size = int(0.2*len(X_matrix))
+    test_size = int(0.2*len(X_matrix))
     
     X_train = []
     y_train = []
