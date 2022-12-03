@@ -11,8 +11,14 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
     inds = np.arange(len(y_test))
     for i in range(n_iters):
         inds_boot = resample(inds)
-        roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
-        logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
+        try:
+            roc_auc = roc_auc_score(y_test[inds_boot], y_test_pred[inds_boot])
+        except ValueError:
+            roc_auc = 0
+        try:
+            logloss = log_loss(y_test[inds_boot], y_test_pred[inds_boot], eps=10**-6)
+        except ValueError:
+            logloss = 0
         accuracy = accuracy_score(y_test[inds_boot], 1 * (y_test_pred[inds_boot] > 0.5))
         precision, recall, _ = precision_recall_curve(y_test[inds_boot], y_test_pred[inds_boot])
         pr_auc = auc(recall, precision)
