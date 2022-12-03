@@ -11,6 +11,9 @@
 - name: Sehmimul Hoque
 - student ID: 20814946
 
+- name: Siddhardha Penmetsa
+- student ID: 20924945
+
 ## Install Dependencies
 
 - numpy
