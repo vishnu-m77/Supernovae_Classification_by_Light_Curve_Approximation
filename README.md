@@ -5,8 +5,8 @@
 - name: Vishnu Mugundan
 - student ID: 20823106
 
-- name:
-- student ID:
+- name: Maimouna Sow
+- student ID: 20822614
 
 ## Install Dependencies
 
