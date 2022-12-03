@@ -149,19 +149,20 @@ class FitNF():
     arbitrary objects. It contains one_object_pred fucntion which predicts flux for only 
     one object.
     """
-    def __init__(self, data_dir, num_objects, param, report_file, verbose = 1):
+    def __init__(self, data_dir, shuffle, num_objects, param, report_file, verbose = 1):
         super(FitNF, self).__init__()
 
         self.lr = param["lr"]
         self.num_epochs = param["num_epochs"]
         self.display_epochs = param["display_epochs"]
         self.num_samples = param["num_samples"]
-        self.num_ts = param["num_ts"] # The augmented timestamps for flux interpolation
+        self.num_ts = 256 # The augmented timestamps for flux interpolation
 
         df = pd.read_csv(data_dir) # define pandas datadrame for while data
 
         objects = df['object_id'].unique()
-        # np.random.shuffle(objects)
+        if shuffle:
+            np.random.shuffle(objects)
 
         if num_objects < len(objects):
             objects = objects[:num_objects]
