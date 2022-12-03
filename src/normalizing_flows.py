@@ -12,14 +12,14 @@ from joblib import Parallel, delayed
 import sys
 
 """
-utility functions
+utility functions for normalizing flows
 """
 
 def mask_inputs(layer):
     """
     This is used to mask variables in the flow. When layer is even,
-    variables of the normalizing flow are masked by [0.,1.] and when
-    layer is odd, variable are masked by [1.,0.]
+    variables of the normalizing flow are masked by [1.,0.] and when
+    layer is odd, variable are masked by [0.,1.]
     mask_prime is the reverse masking of each var_mask
     """
     if (layer % 2 != 0):
@@ -34,7 +34,10 @@ def mask_inputs(layer):
 
 def augmentation(timestamps, wavelengths=np.array([np.log10(4741.64), np.log10(6173.23)]), num_timestamps=256):
     """
-    augments the data for flux interpolation
+    Augments the data for flux interpolation
+    Divided the timestamps into num_timestamps equally spaced datapoints.
+    Flux is then approximated at each timestamp using the inverse transform of
+    normalising flows. 
     """
     augmented_timestamps = np.linspace(min(timestamps), max(timestamps), num=num_timestamps)
     X_pred = []
@@ -47,6 +50,10 @@ class Net(nn.Module):
     """
     Contains neural network architecture for 
     implementing functions s (scale) and t (translation)
+    4 input unit are used for flux, flux_error, timetamp and transformed passband
+    Note that timetamp and transformed passband are conitional variables. This is why
+    we have only 2 outputs for functions s and t. On these 2 outputs for s an t,
+    we apply the proper masking depening on which layer we are in. 
     """
     def __init__(self, hidden_units=10):
         super(Net, self).__init__()
@@ -65,7 +72,10 @@ class Net(nn.Module):
 class RealNVPtransforms(Net):
     """
     This class contains the functions which are used for the realNVP implementation
-    of normalizing flows.
+    of normalizing flows. The function s and t are designed be neural networks.
+    This class contains the forward and inverse transform of each layer.
+    We then call forward transforms 8 times to stack multiple layers together for training.
+    We then call backward transforms 8 times to stack multiple layers together for sampling.
     """
     def __init__(self):
         super(RealNVPtransforms, self).__init__()
@@ -74,31 +84,40 @@ class RealNVPtransforms(Net):
 
     def forward_transform(self, layer, x, y):
         """
-        Forward transform of flux data y = [flux,flux_err] to latent z conditioned on x = [time_stamp, passband]
+        Forward transform of flux data y = [flux,flux_err] to 
+        latent z conditioned on x = [time_stamp, transformed passband]. 
+        As x is the conditional variable, it does not get modified in the forward transform
         """
         nn_input = torch.cat((y,x),dim=1)
-        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer)
-        nn_masked_input = torch.matmul(nn_input, nn_mask_mat)
+        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer) # nn_input contains 4 elements (2 for y and then 2 for x)
+        nn_masked_input = torch.matmul(nn_input, nn_mask_mat) # mask first or second component of y depending on layer
         s_forward = self.s.forward(nn_masked_input)
         t_forward = self.t.forward(nn_masked_input)
-        y_forward = (y*torch.exp(s_forward)+t_forward)*mask_prime+y*var_mask
-        log_det = torch.sum(s_forward*mask_prime, dim=1) # log determinant
+        y_forward = (y*torch.exp(s_forward)+t_forward)*mask_prime+y*var_mask # forward transform
+        log_det = torch.sum(s_forward*mask_prime, dim=1) # log determinant (for finding determinant)
         return y_forward, log_det
 
     def inverse_transform(self, layer, z, x):
         """
-        Inverse transform of latent z to flux data y = [flux,flux_err] conditioned on x = [time_stamp, passband]
+        Inverse transform of latent z to flux data y = [flux,flux_err] 
+        conditioned on x = [time_stamp, trnormed passband]
+        As x is the conditional variable, it does not get modified in the forward transform
         """
-        nn_input = torch.cat((z,x), dim=0)
-        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer)
-        #x_backward = (z-self.t.forward(nn_masked_input))df = pd.read_csv(data_dir) # define pandas datadrame for while data*torch.exp(-self.s.forward(nn_masked_input))*mask_prime+z_masked
+        nn_input = torch.cat((z,x), dim=0) # nn_input contains 4 elements (2 for z and then 2 for x)
+        nn_mask_mat, var_mask, mask_prime = mask_inputs(layer) # mask first or second component of z depending on layer
         nn_masked_input = torch.matmul(nn_input, nn_mask_mat)
         s_forward = self.s.forward(nn_masked_input)
         t_forward = self.t.forward(nn_masked_input)
-        z_backward = (z - t_forward)*torch.exp(-s_forward)*mask_prime+z*var_mask
+        z_backward = (z - t_forward)*torch.exp(-s_forward)*mask_prime+z*var_mask # backward transform
         return z_backward
 
 class NormalizingFlowsBase(RealNVPtransforms):
+    """
+    This class contains the full forward and full inverse transform functions. 
+    full_forward_transform is for training and full_backward_transform is for sampling.
+    sampling function is also present. We sample from the prior where out prior is just the
+    standard Multivariate Gaussian Distribution
+    """
     def __init__(self, num_layers):
         super(NormalizingFlowsBase, self).__init__()
         self.num_layers = num_layers
@@ -110,7 +129,7 @@ class NormalizingFlowsBase(RealNVPtransforms):
             y, det = self.forward_transform(layer, x, y)
             log_likelihood = log_likelihood + det
         prior_prob = self.prior.log_prob(y)
-        log_likelihood = log_likelihood + prior_prob
+        log_likelihood = log_likelihood + prior_prob # for loss function
         z = y
         return z, log_likelihood.mean()
 
@@ -121,11 +140,16 @@ class NormalizingFlowsBase(RealNVPtransforms):
         return y
     
     def sample_data(self, x):
-        z = torch.from_numpy(np.asarray(self.prior.sample()))
-        y = self.full_backward_transform(z,x)
+        z = torch.from_numpy(np.asarray(self.prior.sample())) # latent sample
+        y = self.full_backward_transform(z,x) # y[0] is predicted flux
         return y
 
 class FitNF():
+    """
+    This is the main class for normalizing flows which finds predicted flux for
+    arbitrary objects. It contains one_object_pred fucntion which predicts flux for only 
+    one object.
+    """
     def __init__(self, data_dir, param, v = 1):
         super(FitNF, self).__init__()
         # if v: print() # v is for verbosity
@@ -135,7 +159,7 @@ class FitNF():
         self.num_epochs = param["num_epochs"]
         self.display_epochs = param["display_epochs"]
         self.num_samples = param["num_samples"]
-        self.num_ts = param["num_ts"]
+        self.num_ts = param["num_ts"] # The augmented timestamps for flux interpolation
 
         df = pd.read_csv(data_dir) # define pandas datadrame for while data
 
@@ -237,14 +261,14 @@ class FitNF():
     
     def one_object_pred(self, df_obj, obj_name):
         timestamp = np.asarray(df_obj['mjd']) # timestamp
-        passbands = np.asarray(df_obj['passband']) # define passband
-        # process passband to log(wavelength) [wavelegnth_arr]
+        passbands = np.asarray(df_obj['passband']) # passband
+        # process passband to log(wavelength) [wavelegnth_arr]. This is processed passband
         wavelength_arr = [] 
         for pb in passbands:
             if pb==0:
-                wavelength_arr.append(np.log10(4741.64))
+                wavelength_arr.append(np.log10(4741.64)) # from the paper we are working with
             elif pb==1:
-                wavelength_arr.append(np.log10(6173.23))
+                wavelength_arr.append(np.log10(6173.23)) # from the paper we are working with
             else:
                 print("Passband invalid")
         flux = np.asarray(df_obj['flux'])
@@ -258,16 +282,18 @@ class FitNF():
         X = torch.from_numpy(np.array(X)).to(torch.float32)
         y = torch.from_numpy(np.array(y)).to(torch.float32)
 
-        NF = NormalizingFlowsBase(num_layers = 8)
+        NF = NormalizingFlowsBase(num_layers = 8) # Initialize NormalizingFlowsBase with 8 layers
         
         optimizer = torch.optim.Adam(NF.parameters(), self.lr) 
-        untransformed_X = X
+        untransformed_X = X # original timestamp and processed passband
+        # Standardize X and y
         X = StandardScaler().fit_transform(X)
         X = torch.from_numpy(X).to(torch.float32)
         y_transform = StandardScaler()
         processed_flux = y_transform.fit_transform(y)
         y = torch.from_numpy(processed_flux).to(torch.float32)
         loss_vals = []
+        # training loop
         for epoch in range(self.num_epochs):
             _ , log_likelihood = NF.full_forward_transform(X,y)
             loss = -log_likelihood
@@ -279,6 +305,9 @@ class FitNF():
         print ('Train Loss : {:.4f}'.format(loss))
         
         # prediction
+        # In the augmentation(...) function below, we augment the timestamps for each passband
+        # In the end we get an X_pred array which has the format as given in the block comment below.
+        # pb_1 is one passband and pb_2 is the other passband
         """
         format of X_pred = {
             [[timestamp_1, pb_1],
@@ -292,6 +321,11 @@ class FitNF():
         """
         # print("\nSampling...\n")
         X_pred, aug_timestamps = augmentation(timestamps=timestamp, num_timestamps = self.num_ts)
+        """
+        First we train and sample with normalizing flows for original datapoints (unaugmented).
+        We only do this to generate metrics on how well our model worked. Thus we find metrics using
+        the predicted flux and the original flux at each datapoint of the original data.
+        """
         flux_pred_metrics = []
         flux_err_pred_metrics = []
         num_datapoints = len(X)
@@ -306,6 +340,11 @@ class FitNF():
             flux_err_pred_metrics.append(std_flux)
             # if (i+1)%32 == 0:
             #    print("For datapoint {0}, predicted flux is : {1}, [{2}/{3}]".format(untransformed_X[i],flux_pred_metrics[i], i+1, num_datapoints))
+        """
+        Now we train and sample with normalizing flows for the augmented data.
+        We do this to generate more data at augmented X. This generated data is then used for
+        flux interpolation and to generate flux plots
+        """
         if (X_pred!=None):
             X = StandardScaler().fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
@@ -326,7 +365,7 @@ class FitNF():
     
         passband2name = {0: 'g', 1: 'r'}
         plotLightCurve(obj_name, df_obj, flux_pred, aug_timestamps, passband2name)
-        output = []
+        output = [] # return an output object containing variables needed from normalizing flows for metrics and augmentation
         output.append(flux_pred)
         output.append(list(aug_timestamps))
         output.append(flux)
