@@ -2,6 +2,7 @@ import numpy as np
 import pandas as pd
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_squared_log_error
 from scipy import stats
+import sys
 
 
 def nlpd_metric(flux, flux_pred, flux_err_pred):
@@ -154,7 +155,8 @@ def append_to_list(lst_arr, elem_arr):
         lst_arr[i].append(elem_arr[i])
     return lst_arr
 
-def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
+def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None, v=1):
+    # if v: print() # v is for verbosity
     num_objects = len(flux)
     rmse_arr, mae_arr, rse_arr, rae_arr, mape_arr = [],[],[],[],[]
     nlpd_arr, nrmseo_arr, nrmsep_arr, picp_68_arr, picp_95_arr = [],[],[],[],[]
@@ -169,6 +171,11 @@ def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
     for i in range(len(metrics_array)):
         mean_metrics_summary.append(np.array(metrics_array[i]).mean())
         std_metrics_summary.append(np.array(metrics_array[i]).std())
+        original_stdout = sys.stdout
+        with open('out.txt', 'a') as f:
+            sys.stdout = f
+            print("Metric {0} has mean {1} and standard deviation {2}".format(i+1, mean_metrics_summary[i], std_metrics_summary[i]))
+            sys.stdout = original_stdout
         print("Metric {0} has mean {1} and standard deviation {2}".format(i+1, mean_metrics_summary[i], std_metrics_summary[i]))
     
     report = pd.DataFrame(columns=['rmse_arr', 'mae_arr', 'rse_arr', 'rae_arr', 'mape_arr', 'nlpd_arr', 'nrmseo_arr', 'nrmsep_arr', 'picp_68_arr', 'picp_95_arr'],

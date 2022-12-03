@@ -125,8 +125,9 @@ class NormalizingFlowsBase(RealNVPtransforms):
         return y
 
 class FitNF():
-    def __init__(self, data_dir, param):
+    def __init__(self, data_dir, param, v = 1):
         super(FitNF, self).__init__()
+        # if v: print() # v is for verbosity
         num_objects = param["num_objects"]
 
         self.lr = param["lr"]
@@ -138,30 +139,19 @@ class FitNF():
         df = pd.read_csv(data_dir) # define pandas datadrame for while data
 
         objects = df['object_id'].unique()
-        np.random.shuffle(objects)
+        # np.random.shuffle(objects)
 
         if num_objects < len(objects):
             objects = objects[:num_objects]
             
         directory = os.path.dirname(__file__)
-            
-        with open(directory + "/objects.json", 'w') as f:
-            for object in objects:
-                json.dump(object, f)
-                json.dump("\n", f)
 
         flux_pred = []
         aug_timestamps = []
 
-        # df_obj = df.loc[df['object_id'] == 'ZTF20adaduxg'] # select data for object=object_name
-        # flux_pred, aug_timestamp = self.one_object_pred(df_obj)
-        # flux_predes.append(flux_pred)
-        # aug_timestamps.append(aug_timestamp)
         X_test = []
         y_test = []
 
-        # df.loc[df['obj_type'] == 'SN Ia', 'obj_type'] = 1
-        # df.loc[df['obj_type'] != 1, 'obj_type'] = 0
         df.loc[df['obj_type'] == 'SN Ia', 'obj_type'] = 1
         df.loc[df['obj_type'] == 'SN Ia-91T', 'obj_type'] = 1
         df.loc[df['obj_type'] == 'SN Ia-pec', 'obj_type'] = 1
@@ -187,9 +177,6 @@ class FitNF():
             df_obj = df.loc[df['object_id'] == object] # select data for object=object_name
             true_value = int(df_obj['obj_type'].to_numpy()[0])
             y_test.append(true_value)
-            # np.asarray .values
-            # flux.extend(df_obj['flux'].values)
-            # flux_err.extend(df_obj['flux_err'].values)
         
         flux = np.array(flux)
         flux_err = np.array(flux_err)
@@ -338,29 +325,6 @@ class FitNF():
             flux_err_pred.append(std_flux)
             # if (i+1)%32 == 0:
             #     print("For observation {0}, predicted flux is : {1}, [{2}/512]".format(X_pred[i], flux_pred[i], i+1))
-
-        # df_obj_pb_0 = df_obj
-        # df_obj_pb_1 = df_obj
-        # df_obj_pb_0 = df_obj_pb_0.loc[df_obj['passband']==0]
-        # df_obj_pb_1 = df_obj_pb_1.loc[df_obj['passband']==1]
-        # pb0_t = df_obj_pb_0['mjd']
-        # pb0_flux = df_obj_pb_0['flux']
-        # pb1_t = df_obj_pb_1['mjd']
-        # pb1_flux = df_obj_pb_1['flux']
-        # plt.plot(pb0_t, pb0_flux, 'o', label='DATA: PB=g', color='b')
-        # plt.plot(pb1_t, pb1_flux, 'o', label='DATA: PB=r', color='g')
-
-        # plt.plot(aug_timestamps, flux_pred[:self.num_ts], label='NF: PB=g', color='b')
-        # plt.plot(aug_timestamps, flux_pred[-self.num_ts:], label='NF: PB=r', color='g')
-
-
-        # plt.title("Flux against timestamp for " + obj_name)
-        # plt.xlabel("timestamp")
-        # plt.ylabel("flux")
-        # plt.legend(loc="upper right")
-        # # num = np.random.randint(-1000,1000)
-        # plt.savefig('plots/Light_Flux_NF_'+ obj_name +'.png')
-        # plt.clf()
     
         output = []
         output.append(flux_pred)

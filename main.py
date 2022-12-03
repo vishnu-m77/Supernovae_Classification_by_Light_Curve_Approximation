@@ -12,6 +12,7 @@ import src.normalizing_flows as NF
 import src.metrics as met
 import CNNMetrics
 from matplotlib.backends.backend_pdf import PdfPages
+import sys
 
 
 
@@ -23,8 +24,11 @@ if __name__ == '__main__':
     # Default values of parameters are defined
     parser.add_argument('--param', default = 'param/param.json', help='file containing hyperparameters')
     parser.add_argument('-v', '--verbose', help="increase output verbosity", action="store_true")
+    parser.add_argument('-p', '--plot', help="plotting frequency", type=int, choices=[0, 1, 2])
     
     args = parser.parse_args()
+    verbose = args.verbose
+    plot = args.plot
 
     # Hyperparameters from json file
     with open(args.param) as paramfile:
@@ -98,6 +102,11 @@ if __name__ == '__main__':
     report = CNNMetrics.gen_report(y_test, y_test_pred)
 
     print(report)
+    original_stdout = sys.stdout
+    with open('out.txt', 'a') as f:
+        sys.stdout = f
+        print(report)
+        sys.stdout = original_stdout
 
     fig , ax = plt.subplots(figsize=(5, 7))
     ax.axis('tight')
