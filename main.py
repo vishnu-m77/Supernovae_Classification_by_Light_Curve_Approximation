@@ -15,7 +15,7 @@ def plots(nf):
     df = nf.df # Accessing the dataframe from NF object
     objects = nf.objects # Accessing unique objects from data
 
-    # Regression and Performance metrics
+    
     for i in range(len(objects)):
         obj_name = objects[i]
         df_obj = df.loc[df['object_id'] == obj_name] # select data for object=object_name
