@@ -25,8 +25,10 @@ def run_CNN(cnn_params, report_file, nf = 0, og = 0, run_nf = 0):
     
     X_matrix = []
     y_vector = []
+    X_test = []
+    y_test = []
     
-    if (not run_nf) or og:
+    if (not run_nf):
         
         X_file = os.path.join("data", "images.json")
         y_file = os.path.join("data", "labels.json")
@@ -35,7 +37,14 @@ def run_CNN(cnn_params, report_file, nf = 0, og = 0, run_nf = 0):
         with open(y_file, 'r') as f:
             y_vector = json.load(f)
         
+    else:
         if og:
+            X_file = os.path.join("data", "images.json")
+            y_file = os.path.join("data", "labels.json")
+            with open(X_file, 'r') as f:
+                X_matrix = json.load(f)
+            with open(y_file, 'r') as f:
+                y_vector = json.load(f)
             X_test = nf.X_matrix
             y_test = nf.y_vector
             X_test = np.array(X_test)
@@ -44,13 +53,6 @@ def run_CNN(cnn_params, report_file, nf = 0, og = 0, run_nf = 0):
         else:
             X_matrix = nf.X_matrix
             y_vector = nf.y_vector
-            X_test = []
-            y_test = []
-    else:
-        X_matrix = nf.X_matrix
-        y_vector = nf.y_vector
-        X_test = []
-        y_test = []
             
     X_matrix = np.array(X_matrix)
     y_vector = np.array(y_vector)
