@@ -7,12 +7,19 @@ import src.normalizing_flows as NF
 import src.nf_metrics as nf_met
 import src.cnn_metrics as cnn_met
 import sys
+import shutil
 import numpy as np
 
 def plots(nf):
     passband2name = {0: 'g', 1: 'r'}
     df = nf.df # Accessing the dataframe from NF object
     objects = nf.objects # Accessing unique objects from data
+    path = "Nf_run_plots/"
+    #creates Nf_run_plots and saves plots at each run
+    isExist = os.path.exists(path)
+    if isExist:
+        shutil.rmtree(path)
+    os.makedirs(path)
 
     for i in range(len(objects)):
         obj_name = objects[i]
