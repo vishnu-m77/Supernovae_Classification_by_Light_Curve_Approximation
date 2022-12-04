@@ -43,7 +43,7 @@ class Net(nn.Module):
         return x
 
 
-def classification(param, X_matrix, y_vector, report_file):
+def classification(param, X_matrix, y_vector, report_file, og, X_test, y_test):
     '''
     Params:
     param: hyperparameters for model training
@@ -55,40 +55,68 @@ def classification(param, X_matrix, y_vector, report_file):
     
     # Defining train and test size
 
-    train_size = int(0.6*len(X_matrix))
-    val_size = int(0.2*len(X_matrix))
-    test_size = int(0.2*len(X_matrix))
+    if not og:
+        train_size = int(0.6*len(X_matrix))
+        val_size = int(0.2*len(X_matrix))
+        test_size = int(0.2*len(X_matrix))
+        
+        X_train = []
+        y_train = []
+        # train / test split data
+        for i in range(train_size):
+            X_train.append(X_matrix[i])
+            y_train.append(y_vector[i])
+        
+        #Converting to torch tensors
+        X_train = torch.from_numpy(np.array(X_train))
+        y_train = torch.from_numpy(np.array(y_train))
+        
+        X_val = []
+        y_val = []
+        for i in range(train_size, train_size + val_size):
+            X_val.append(X_matrix[i])
+            y_val.append(y_vector[i])
+        
+        X_val = torch.from_numpy(np.array(X_val))
+        y_val = torch.from_numpy(np.array(y_val))
+        
+        X_test = []
+        y_test = []
+        for i in range(train_size + val_size, train_size + val_size + test_size):
+            X_test.append(X_matrix[i])
+            y_test.append(y_vector[i])
     
-    X_train = []
-    y_train = []
-    # train / test split data
-    for i in range(train_size):
-        X_train.append(X_matrix[i])
-        y_train.append(y_vector[i])
+        X_test = torch.from_numpy(np.array(X_test))
+        y_test = torch.from_numpy(np.array(y_test))
     
-    #Converting to torch tensors
-    X_train = torch.from_numpy(np.array(X_train))
-    y_train = torch.from_numpy(np.array(y_train))
+    else:
+        train_size = int(0.7*len(X_matrix))
+        val_size = int(0.3*len(X_matrix))
+        
+        X_train = []
+        y_train = []
+        # train / test split data
+        for i in range(train_size):
+            X_train.append(X_matrix[i])
+            y_train.append(y_vector[i])
+        
+        #Converting to torch tensors
+        X_train = torch.from_numpy(np.array(X_train))
+        y_train = torch.from_numpy(np.array(y_train))
+        
+        X_val = []
+        y_val = []
+        for i in range(train_size, train_size + val_size):
+            X_val.append(X_matrix[i])
+            y_val.append(y_vector[i])
+        
+        X_val = torch.from_numpy(np.array(X_val))
+        y_val = torch.from_numpy(np.array(y_val))
+        
+        X_test = torch.from_numpy(np.array(X_test))
+        y_test = torch.from_numpy(np.array(y_test))
     
-    X_val = []
-    y_val = []
-    for i in range(train_size, train_size + val_size):
-        X_val.append(X_matrix[i])
-        y_val.append(y_vector[i])
-    
-    X_val = torch.from_numpy(np.array(X_val))
-    y_val = torch.from_numpy(np.array(y_val))
-    
-    X_test = []
-    y_test = []
-    for i in range(train_size + val_size, train_size + val_size + test_size):
-        X_test.append(X_matrix[i])
-        y_test.append(y_vector[i])
-   
     #defining model metrics and optimiser
-    X_test = torch.from_numpy(np.array(X_test))
-    y_test = torch.from_numpy(np.array(y_test))
-    
     net = Net()
     criterion = nn.BCELoss()#reduction='sum')
     optimizer = optim.Adam(net.parameters(), lr = lr, weight_decay = weight_decay)#optim.SGD(net.parameters(), lr=0.001)#, momentum=0.8)

@@ -168,8 +168,8 @@ def generate_NF_report(flux, flux_pred, flux_err=None, flux_err_pred=None):
     mean_metrics_summary = []
     std_metrics_summary = []
     for i in range(len(metrics_array)):
-        mean_metrics_summary.append(np.array(metrics_array[i]).mean())
-        std_metrics_summary.append(np.array(metrics_array[i]).std())
+        mean_metrics_summary.append(np.array(metrics_array[i]).mean().round(decimals=4))
+        std_metrics_summary.append(np.array(metrics_array[i]).std().round(decimals=4))
     
     report = pd.DataFrame(columns=['rmse_arr', 'mae_arr', 'rse_arr', 'rae_arr', 'mape_arr', 'nlpd_arr', 'nrmseo_arr', 'nrmsep_arr', 'picp_68_arr', 'picp_95_arr'],
                           data=[mean_metrics_summary, std_metrics_summary], 

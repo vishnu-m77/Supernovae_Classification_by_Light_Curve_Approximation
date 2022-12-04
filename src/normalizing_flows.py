@@ -299,7 +299,8 @@ class FitNF():
             [timestamp_256, pb_2]]
         }
         """
-        # print("\nSampling...\n")
+        if verbose:
+            print('\nSampling for object {} \n'.format(obj_name))
         X_pred, aug_timestamps = augmentation(timestamps=timestamp, num_timestamps = self.num_ts)
         """
         First we train and sample with normalizing flows for original datapoints (unaugmented).

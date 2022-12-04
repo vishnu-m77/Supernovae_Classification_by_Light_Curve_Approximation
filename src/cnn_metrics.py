@@ -27,7 +27,7 @@ def gen_report(y_test, y_test_pred, n_iters=1000, decimals=3):
         metrics.append([roc_auc, pr_auc, logloss, accuracy, recall, precision])
     metrics = np.array(metrics)
     report = pd.DataFrame(columns=["ROC_AUC", 'PR-AUC', 'LogLoss', 'Accuracy', 'Recall', 'Precision'],
-                          data=[metrics.mean(axis=0), metrics.std(axis=0)], 
+                          data=[metrics.mean(axis=0).round(decimals=4), metrics.std(axis=0).round(decimals=4)], 
                           index=['mean', 'std'])
     
     return report
