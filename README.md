@@ -18,7 +18,6 @@
 
 - numpy
 - matplotlib
-- shutil
 - torch
 - fulu
 - pandas
@@ -70,6 +69,23 @@ python main.py --param param/param.json -nf 10 -v -p
 - weight_decay: 
 - lr: Learning rate of the gradient descent
 
-## Data
+## File Structure
+- `main.py` : main running script
+- `nfmetrics.csv` : contains metrics of flux approximation using normalizing flows
+- `report.txt` : final report containing metrics for normalizing flows, training epochs of the CNN and metrics of CNN
+- `requirements.txt` : requirements
+- `src/normalizing_flows.py` : normalizing flows module
+- `src/CNN.py` : CNN module
+- `src/plot_utls.py` : plot utilities for normalizing flows
+-  `src/cnn_metrics.py` : cnn metrics utilities
+- `src/nf_metrics.py` : normalizing flows metrics utilities
+- `src/X_matrix.json` : outputed flux and flux error for one full run of normalizing flows
+- `src/y_vector.json` : supernovae binary prediction of objects in `src/X_matrix.json`
+- `data/ANTARES_NEW.csv` : dataset containing relevant data for flux interpolation and flux type classification of 1870 objects
+- `data/images.json` : flux and flux error for 600 objects using the normalzing flows algorithm (CNN can be trained on this data)
+- `data/labels.json` : supernovae binary prediction of the 600 objects in `images.json`
+- `param/param,json` : hyperparameters
+- `plots`: contains plots of several flux interpolations using normalizing flows
+
 
 
