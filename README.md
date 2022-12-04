@@ -91,5 +91,7 @@ It is suggested that you train the CNN using the data of 600 objects already obt
 - `param/param,json` : hyperparameters
 - `plots`: contains plots of several flux interpolations using normalizing flows
 
+## Plots
 
+The plots directory contains several flux interpolations using normalizing flows. The x axis represents the timestamps and the y axis represents the flux. The 2 colours represent the 2 passbands. The dots represent the points (timestamp, passband, flux) obtained from the `data\ANTARES_NEW.csv` dataset. The solid lines represent the predicted flux obtained from normalizing flows.
 
