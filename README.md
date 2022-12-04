@@ -18,6 +18,7 @@
 
 - numpy
 - matplotlib
+- shutil
 - torch
 - fulu
 - pandas
