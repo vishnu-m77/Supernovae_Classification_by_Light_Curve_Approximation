@@ -1,6 +1,5 @@
 import argparse
 import os
-import pandas as pd
 import json
 from src.plot_utils import plotLightCurve
 from src.CNN import classification as CNN
