@@ -599,8 +599,8 @@ Predicted object ZTF20acwfcfs
 Predicted object ZTF20acwcqnv
 Predicted object ZTF20acwdnbw
         rmse_arr  mae_arr  rse_arr  rae_arr  mape_arr  nlpd_arr  nrmseo_arr  nrmsep_arr  picp_68_arr  picp_95_arr
-mean     0.0768   0.0363   0.5172    0.3528   0.3528   22.3614   -2.7633      4.2227      0.9995       0.7676
-std      0.5287   0.2036   0.5445    0.3792  25.0704    1.1190   9.7603       0.4487      0.1041       0.0486
+mean     0.0768   0.0363   0.5172    0.3528   22.3614   -2.7633   4.2227      0.9995      0.7676       0.9524
+std      0.5287   0.2036   0.5445    0.3792   25.0704    1.1190   9.7603      0.4487      0.1041       0.0486
 [   10] loss: 0.371
 [   20] loss: 0.343
 [   30] loss: 0.313
