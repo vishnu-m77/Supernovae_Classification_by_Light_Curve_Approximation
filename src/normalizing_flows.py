@@ -267,7 +267,8 @@ class FitNF():
         optimizer = torch.optim.Adam(NF.parameters(), self.lr) 
         untransformed_X = X # original timestamp and processed passband
         # Standardize X and y
-        X = StandardScaler().fit_transform(X)
+        X_transform = StandardScaler()
+        X = X_transform.fit_transform(X)
         X = torch.from_numpy(X).to(torch.float32)
         y_transform = StandardScaler()
         processed_flux = y_transform.fit_transform(y)
@@ -327,7 +328,7 @@ class FitNF():
         flux interpolation and to generate flux plots
         """
         if (X_pred!=None):
-            X = StandardScaler().fit_transform(X_pred)
+            X = X_transform.fit_transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
         flux_pred = []
         flux_err_pred = []
