@@ -328,7 +328,7 @@ class FitNF():
         flux interpolation and to generate flux plots
         """
         if (X_pred!=None):
-            X = X_transform.fit_transform(X_pred)
+            X = X_transform.transform(X_pred)
             X = torch.from_numpy(X).to(torch.float32)
         flux_pred = []
         flux_err_pred = []
