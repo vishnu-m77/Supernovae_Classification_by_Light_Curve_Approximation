@@ -1,13 +1,13 @@
 # Supernovae Classification by Light Curve Approximation
 
 ### Collaborators:
-- name: Vishnu Mugundan
+- Vishnu Mugundan
 
-- name: Maimouna Sow
+- Maimouna Sow
 
-- name: Sehmimul Hoque
+- Sehmimul Hoque
 
-- name: Siddhardha Penmetsa
+- Siddhardha Penmetsa
 
 ## Install Dependencies
 
